@@ -22,7 +22,12 @@ var AvatarHover  = function() {
 			that.isShown = false;
 			that.isLarge = false;
 		});
+
+		$("#app-mount").bind("DOMSubtreeModified", function() {
+		    that.run();
+		});
 	};
+	
 	this.unload = function() {
 		this.saveSettings();
 	};
