@@ -44,7 +44,7 @@ var AvatarHover  = function() {
 	};
 
 	this.getDescription = function() {
-		return "When hovering Avatar show it on default size";
+		return "When hovering Avatar use Ctrl / Ctrl+Shift";
 	};
 
 	this.getAuthor = function() {
@@ -52,7 +52,7 @@ var AvatarHover  = function() {
 	};
 
 	this.getVersion = function() {
-		return "Version 0.0.3";
+		return "Version 0.0.4";
 	};
 };
 
@@ -68,6 +68,7 @@ AvatarHover.prototype.appendContainer = function () {
 	var elem = $("<div id='AvatarHover'>");
 	elem.css({
 		"display:":"none", "background-size": "cover",
+		"background-color": "#303336",
 		"border-radius": "4px", 
 		"border": "1px solid black",
 		"position":"absolute", 
