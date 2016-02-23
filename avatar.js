@@ -45,49 +45,7 @@ var AvatarHover  = function() {
 	};
 
 	this.getSettingsPanel = function() {
-
-		return '<style>' +
-			'table#avatarSettings { margin:30px; margin-top:70px; padding-top:20px }'+
-			'table#avatarSettings td:last-child { text-align:center }'+
-			'table button { text-weight:bold; background-color: #BFF5F7 }'+
-			'table button:hover { background-color: #97E6B2 }'+
-			'</style>' +
-			'<table id="avatarSettings" width="90%">' +
-			'<tr><td width="50%"><label for="avatarBGColor">Avatar BG Color: </label></td>'+
-					'<td><input type="text" placeholder="#012345" id="avatarBGColor" value="'+
-					this.settings['avatarBackgroundColor']+
-					'"></td></tr>' + 
-	        '<tr><td><hr></td><td></td></tr>'+
-	        '<tr><td><label for="avatarBorderRadius">Avatar BorderRadius: </label></td>'+
-					'<td><input type="text" placeholder="0px" id="avatarBorderRadius" value="'+
-					this.settings['avatarBorderRadius']+
-					'"></td></tr>' + 
-			'<tr><td><hr></td><td></td></tr>'+
-           	'<tr><td><label for="avatarBorderSize">Avatar BorderSize: </label></td>'+
-					'<td><input type="text" placeholder="1px" id="avatarBorderSize" value="'+
-					this.settings['avatarBorderSize']+
-					'"></td></tr>' + 
-			'<tr><td><hr></td><td></td></tr>'+
-        	'<tr><td><label for="avatarBorderColor">Avatar BorderColor: </label></td>'+
-					'<td><input type="text" placeholder="0px" id="avatarBorderColor" value="'+
-					this.settings['avatarBorderColor']+
-					'"></td></tr>' + 
-        	'<tr><td><hr></td><td></td></tr>'+
-        	'<tr><td><label for="avatarIsShown">Avatar Force Show: </label></td>'+
-					'<td><input type="checkbox" id="avatarIsShown" '+
-					(this.settings['isShown'] ? "checked": "")+
-					'></td></tr>' + 
-        	'<tr><td><hr></td><td></td></tr>'+
-        	'<tr><td><label for="avatarIsLarge">Avatar Force Large: </label></td>'+
-					'<td><input type="checkbox" id="avatarIsLarge" '+
-					(this.settings['isLarge'] ? "checked": "")+
-					'></td></tr>' + 
-        	'<tr><td><hr></td><td><hr></td></tr>'+
-        	'<tr><td></td><td>'+
-        	'<button '+
-           		'style="border:1px solid blue"'+
-            	'onclick="BdApi.getPlugin(\'AvatarHover\').setSettings()"'+
-            '>Apply</button></td></tr></table>';
+		return this.getPanel();
 	};
 
 	this.getName = function() {
@@ -103,7 +61,7 @@ var AvatarHover  = function() {
 	};
 
 	this.getVersion = function() {
-		return "Version 0.1.0";
+		return "Version 0.1.1";
 	};
 };
 
@@ -137,12 +95,7 @@ AvatarHover.prototype.appendContainer = function () {
 	var elem = $("<div id='AvatarHover'>");
 	elem.css({
 		"display:":"none", "background-size": "cover",
-		"background-color": that.settings['avatarBackgroundColor'],
-		"border-radius": that.settings['avatarBorderRadius'], 
-		"border": that.settings['avatarBorderSize'] +  " solid "+
-					that.settings['avatarBorderColor'],
-		"position":"absolute", 
-		"zIndex":"99999"
+		"position":"absolute", "zIndex":"99999"
 	});
 	$("body").append(elem);
 };
@@ -162,6 +115,10 @@ AvatarHover.prototype.init = function() {
 
 				$("#AvatarHover").css({
 					"display":"block", 
+					"background-color": that.settings['avatarBackgroundColor'],
+					"border-radius": that.settings['avatarBorderRadius'], 
+					"border": that.settings['avatarBorderSize'] +  " solid "+
+								that.settings['avatarBorderColor'],
 					"background-image": $(this).css("background-image")
 				});
 			}
@@ -225,9 +182,8 @@ AvatarHover.prototype.loadSettings = function() {
 	var settings = this.getSettingsFile();
 	try { 
 		var tmpSettings = JSON.parse(_fs.readFileSync(settings)); 
-		console.log(this.settings.length);
 
-		if(this.size(this.settings) == this.size(tmpSettings.length))
+		if(this.size(this.settings) == this.size(tmpSettings))
 			this.settings = tmpSettings;
 	}catch(ex) {}
 };
@@ -238,4 +194,49 @@ AvatarHover.prototype.getSettingsFile = function() {
     _dataPath += "/BetterDiscord";
     _userFile = _dataPath + "/avatar.json";
     return _userFile;
+};
+
+AvatarHover.prototype.getPanel = function() {
+	 return '<style>' +
+		'table#avatarSettings { margin:30px; margin-top:70px; padding-top:20px }'+
+		'table#avatarSettings td:last-child { text-align:center }'+
+		'table button { text-weight:bold; background-color: #BFF5F7 }'+
+		'table button:hover { background-color: #97E6B2 }'+
+		'</style>' +
+		'<table id="avatarSettings" width="90%">' +
+		'<tr><td width="50%"><label for="avatarBGColor">Avatar BG Color: </label></td>'+
+				'<td><input type="text" placeholder="#012345" id="avatarBGColor" value="'+
+				this.settings['avatarBackgroundColor']+
+				'"></td></tr>' + 
+        '<tr><td><hr></td><td></td></tr>'+
+        '<tr><td><label for="avatarBorderRadius">Avatar BorderRadius: </label></td>'+
+				'<td><input type="text" placeholder="0px" id="avatarBorderRadius" value="'+
+				this.settings['avatarBorderRadius']+
+				'"></td></tr>' + 
+		'<tr><td><hr></td><td></td></tr>'+
+       	'<tr><td><label for="avatarBorderSize">Avatar BorderSize: </label></td>'+
+				'<td><input type="text" placeholder="1px" id="avatarBorderSize" value="'+
+				this.settings['avatarBorderSize']+
+				'"></td></tr>' + 
+		'<tr><td><hr></td><td></td></tr>'+
+    	'<tr><td><label for="avatarBorderColor">Avatar BorderColor: </label></td>'+
+				'<td><input type="text" placeholder="0px" id="avatarBorderColor" value="'+
+				this.settings['avatarBorderColor']+
+				'"></td></tr>' + 
+    	'<tr><td><hr></td><td></td></tr>'+
+    	'<tr><td><label for="avatarIsShown">Avatar Force Show: </label></td>'+
+				'<td><input type="checkbox" id="avatarIsShown" '+
+				(this.settings['isShown'] ? "checked": "")+
+				'></td></tr>' + 
+    	'<tr><td><hr></td><td></td></tr>'+
+    	'<tr><td><label for="avatarIsLarge">Avatar Force Large: </label></td>'+
+				'<td><input type="checkbox" id="avatarIsLarge" '+
+				(this.settings['isLarge'] ? "checked": "")+
+				'></td></tr>' + 
+    	'<tr><td><hr></td><td><hr></td></tr>'+
+    	'<tr><td></td><td>'+
+    	'<button '+
+       		'style="border:1px solid blue"'+
+        	'onclick="BdApi.getPlugin(\'AvatarHover\').setSettings()"'+
+        '>Apply</button></td></tr></table>';
 };
