@@ -27,14 +27,13 @@ var AvatarHover  = function() {
 		    that.run();
 		});
 	};
-	
+
 	this.unload = function() {
 		this.saveSettings();
 	};
 
 	this.start = function() {
 	    this.isRunning = true;
-		this.run();
 	};
 
 	this.stop = function() {
@@ -66,7 +65,7 @@ var AvatarHover  = function() {
 	};
 
 	this.getVersion = function() {
-		return "Version 0.1.1";
+		return "Version 0.1.5";
 	};
 };
 
