@@ -65,7 +65,7 @@ var AvatarHover  = function() {
 	};
 
 	this.getVersion = function() {
-		return "Version 0.1.5";
+		return "Version 0.2.0";
 	};
 };
 
@@ -201,15 +201,25 @@ AvatarHover.prototype.getSettingsFile = function() {
 };
 
 AvatarHover.prototype.getPanel = function() {
-	 return '<style>' +
-		'table#avatarSettings { margin:30px; margin-top:70px; padding-top:20px }'+
-		'table#avatarSettings td:last-child { text-align:center }'+
-		'table button { text-weight:bold; background-color: #BFF5F7 }'+
-		'table button:hover { background-color: #97E6B2 }'+
+	return '<style>' +
+	 	'fieldset.avatarSettings { border-radius: 4px 10px 4px 10px; border:1px solid black;'+
+	 	'	border-left:0px; background-color: #19232F; color:white; margin-top:10px }'+
+	 	'fieldset.avatarSettings legend { border-radius:10px 30px 0px 0px; border:1px solid black;'+
+	 	'	border-right:0px; text-indent:4px; padding:3px; padding-left:0px; padding-right:0px;'+
+	 	'	width:100%; font-weight:bold; background-color: #122334 }'+
+
+		'table.avatarSettings { width:90%; margin:30px; margin-top:70px; padding-top:20px }'+
+		'table.avatarSettings td:last-child { text-align:center }'+
+		'table.avatarSettings label { color:white; font-weight:700; text-indent: 4px }'+
+		'table.avatarSettings hr { border:1px solid white }'+
+		'table.avatarSettings button { padding:3px; border-radius: 4px; font-weight:bold; background-color: #BFF5F7 }'+
+		'table.avatarSettings button:hover { background-color: #97E6B2 }'+
+		'table.avatarSettings input { width: 100px }'+
 		'</style>' +
-		'<table id="avatarSettings" width="90%">' +
+		'<fieldset class="avatarSettings"><legend>AvatarHover Settings:</legend>' +
+		'<table class="avatarSettings">' +
 		'<tr><td width="50%"><label for="avatarBGColor">Avatar BG Color: </label></td>'+
-				'<td><input type="text" placeholder="#012345" id="avatarBGColor" value="'+
+				'<td><input type="color" placeholder="#012345" id="avatarBGColor" value="'+
 				this.settings['avatarBackgroundColor']+
 				'"></td></tr>' + 
         '<tr><td><hr></td><td></td></tr>'+
@@ -224,7 +234,7 @@ AvatarHover.prototype.getPanel = function() {
 				'"></td></tr>' + 
 		'<tr><td><hr></td><td></td></tr>'+
     	'<tr><td><label for="avatarBorderColor">Avatar BorderColor: </label></td>'+
-				'<td><input type="text" placeholder="0px" id="avatarBorderColor" value="'+
+				'<td><input type="color" placeholder="0px" id="avatarBorderColor" value="'+
 				this.settings['avatarBorderColor']+
 				'"></td></tr>' + 
     	'<tr><td><hr></td><td></td></tr>'+
@@ -242,5 +252,13 @@ AvatarHover.prototype.getPanel = function() {
     	'<button '+
        		'style="border:1px solid blue"'+
         	'onclick="BdApi.getPlugin(\'AvatarHover\').setSettings()"'+
-        '>Apply</button></td></tr></table>';
+        '>Apply</button></td></tr></table>'+
+        '</fieldset>'+
+        '<script> $("fieldset.avatarSettings").ready(function () { '+
+        '	$("#bd-psm-s").css({"background-color": "transparent"}); '+
+        '	$("#bd-psm-s").parent().css({"background-color": "transparent"}); '+
+        '	$("#bd-psm-s").parent().parent().css({'+
+        '		"background-color": "transparent", "box-shadow":"0 0 10px 5px rgba(150,200,100,.75)"'+
+        '	}); '+
+        '});</script>';
 };
