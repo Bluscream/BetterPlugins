@@ -259,6 +259,6 @@ AvatarHover.prototype.getPanel = function() {
         '	$("#bd-psm-s").parent().css({"background-color": "transparent"}); '+
         '	$("#bd-psm-s").parent().parent().css({'+
         '		"background-color": "transparent", "box-shadow":"0 0 10px 5px rgba(150,200,100,.75)"'+
-        '	}); '+
+        '	}); console.log(__dirname); '+
         '});</script>';
 };
