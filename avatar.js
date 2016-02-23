@@ -52,7 +52,7 @@ var AvatarHover  = function() {
 	};
 
 	this.getVersion = function() {
-		return "Version 0.0.2";
+		return "Version 0.0.3";
 	};
 };
 
@@ -111,9 +111,12 @@ AvatarHover.prototype.setAvatarSize = function(self) {
 	var height = self.height();
 
 	var windowHeight = $(window).height();
+	var windowWidth = $(window).width();
 
 	var AvatarX = offset.left + (width - newWidth)/2;
 	var AvatarY = windowHeight-height < offset.top + newHeight ? offset.top - newHeight : offset.top + height;
+	AvatarX = AvatarX < 0 ? 0 : AvatarX;
+	AvatarX = AvatarX + width > windowWidth ? windowWidth - width : AvatarX;
 
 	$("#AvatarHover").css({
 		"top": AvatarY + "px",
