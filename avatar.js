@@ -20,9 +20,7 @@ var AvatarHover  = function() {
 			that.large = false;
 		});
 	};
-	this.unload = function() {
-		this.removeContainer();
-	};
+	this.unload = function() {};
 
 	this.start = function() {
 	    this.running = true;
@@ -54,7 +52,7 @@ var AvatarHover  = function() {
 	};
 
 	this.getVersion = function() {
-		return "Version 0.0.1";
+		return "Version 0.0.2";
 	};
 };
 
@@ -76,10 +74,6 @@ AvatarHover.prototype.appendContainer = function () {
 		"zIndex":"99999"
 	});
 	$("body").append(elem);
-};
-
-AvatarHover.prototype.removeContainer = function () {
-	$("#AvatarHover").remove();
 };
 
 AvatarHover.prototype.init = function() {
