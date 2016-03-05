@@ -24,7 +24,7 @@ var AvatarHover  = function() {
 		});
 
 		$("#app-mount").bind("DOMSubtreeModified", function() {
-		    that.run();
+		    that.init();
 		});
 	};
 
@@ -34,19 +34,16 @@ var AvatarHover  = function() {
 
 	this.start = function() {
 	    this.isRunning = true;
+	    this.init();
 	};
 
 	this.stop = function() {
 		this.isRunning = false;
+		this.init();
 	};
 
-	this.onSwitch = function() {
-		this.run();
-	};
-
-	this.onMessage = function() {
-		this.run();
-	};
+	this.onSwitch = function() {};
+	this.onMessage = function() {};
 
 	this.getSettingsPanel = function() {
 		return this.getPanel();
@@ -65,13 +62,17 @@ var AvatarHover  = function() {
 	};
 
 	this.getVersion = function() {
-		return "Version 0.2.0";
+		return "Version 0.3.0";
 	};
 };
 
 AvatarHover.prototype.settings = {
 	"isShown": false,
 	"isLarge": false,
+	"isHoverGuilds": false,
+	"isHoverChannels": true,
+	"isHoverChatMessages": true,
+	"isHoverChatUsers": true,
 	"avatarBackgroundColor":"#303336",
 	"avatarBorderRadius": "4px",
 	"avatarBorderSize": "1px",
@@ -105,33 +106,60 @@ AvatarHover.prototype.appendContainer = function () {
 };
 
 AvatarHover.prototype.init = function() {
+	if(this.settings['isHoverGuilds']) {
+		this.selector("div.guilds-wrapper", ".avatar-small");
+		this.selector("div.guilds-wrapper", ".avatar-large");
+	}
+	if(this.settings['isHoverChannels']) {
+		this.selector("div.channels-wrap", ".avatar-small");
+		this.selector("div.channels-wrap", ".avatar-large");
+	}
+	if(this.settings['isHoverChatMessages']) {
+		this.selector("div.messages-wrapper", ".avatar-small");
+		this.selector("div.messages-wrapper", ".avatar-large");
+	}
+	if(this.settings['isHoverChatUsers']) {
+		this.selector("div.channel-members-wrap", ".avatar-small");
+		this.selector("div.channel-members-wrap", ".avatar-large");
+	}	
+};
+
+AvatarHover.prototype.selector = function (elem, subElemClass) {
 	var that = this;
+	$(elem).find(subElemClass).each(function(id, elem) {
+		if(that.isRunning) {
+			if($(this).data("customShowAvatar"))
+				return;
 
-	$("div.avatar-large,div.avatar-small").each(function(id, elem) {
-		if($(this).data("customShowAvatar"))
-			return;
+			$(this).data("customShowAvatar", true);
 
-		$(this).data("customShowAvatar", true);
+			$(this).mouseenter(function() {
+				if(that.isRunning && (that.isShown || that.settings['isShown'])) {
+					that.setAvatarSize($(this));
 
-		$(this).mouseenter(function() {
-			if(that.isRunning && (that.isShown || that.settings['isShown'])) {
-				that.setAvatarSize($(this));
+					$("#AvatarHover").css({
+						"display":"block", 
+						"background-color": that.settings['avatarBackgroundColor'],
+						"border-radius": that.settings['avatarBorderRadius'], 
+						"border": that.settings['avatarBorderSize'] +  " solid "+
+									that.settings['avatarBorderColor'],
+						"background-image": $(this).css("background-image")
+					});
+				}
+			});
 
-				$("#AvatarHover").css({
-					"display":"block", 
-					"background-color": that.settings['avatarBackgroundColor'],
-					"border-radius": that.settings['avatarBorderRadius'], 
-					"border": that.settings['avatarBorderSize'] +  " solid "+
-								that.settings['avatarBorderColor'],
-					"background-image": $(this).css("background-image")
-				});
-			}
-		});
+			$(this).mouseleave(function() {
+				if(that.isRunning)
+					$("#AvatarHover").css({"display":"none"});
+			});
+		}else {
+			if(!$(this).data("customShowAvatar"))
+				return;
 
-		$(this).mouseleave(function() {
-			if(that.isRunning)
-				$("#AvatarHover").css({"display":"none"});
-		});
+			$(this).data("customShowAvatar", false);
+			$(this).unbind("mouseenter");
+			$(this).unbind("mouseleave");
+		}
 	});
 };
 
@@ -165,14 +193,19 @@ AvatarHover.prototype.setSettings = function() {
 	var borderSize = $('#avatarBorderSize').val();
 	var borderColor = $('#avatarBorderColor').val();
 
-	this.settings['isShown'] = $('#avatarIsShown').is(':checked');
-	this.settings['isLarge'] = $('#avatarIsLarge').is(':checked');
 	this.settings['avatarBackgroundColor'] = bgColor == "" ? "#303336": bgColor;
 	this.settings['avatarBorderRadius'] = borderRad == "" ? "4px": borderRad;
 	this.settings['avatarBorderSize'] = borderSize == "" ? "1px": borderSize;
 	this.settings['avatarBorderColor'] = borderColor == "" ? "black": borderColor;
+	this.settings['isShown'] = $('#avatarIsShown').is(':checked');
+	this.settings['isLarge'] = $('#avatarIsLarge').is(':checked');
+	this.settings['isHoverGuilds'] = $('#avatarIsHoverGuilds').is(':checked');
+	this.settings['isHoverChannels'] = $('#avatarIsHoverChannels').is(':checked');
+	this.settings['isHoverChatMessages'] = $('#avatarIsHoverChatMessages').is(':checked');
+	this.settings['isHoverChatUsers'] = $('#avatarIsHoverChatUsers').is(':checked');
 
 	this.saveSettings();
+	this.init();
 
 	$("#bd-psm-id").remove();
 };
@@ -208,7 +241,7 @@ AvatarHover.prototype.getPanel = function() {
 	 	'	border-right:0px; text-indent:4px; padding:3px; padding-left:0px; padding-right:0px;'+
 	 	'	width:100%; font-weight:bold; background-color: #122334 }'+
 
-		'table.avatarSettings { width:90%; margin:30px; margin-top:70px; padding-top:20px }'+
+		'table.avatarSettings { width:90%; margin:30px; margin-top:10px; padding-top:20px }'+
 		'table.avatarSettings td:last-child { text-align:center }'+
 		'table.avatarSettings label { color:white; font-weight:700; text-indent: 4px }'+
 		'table.avatarSettings hr { border:1px solid white }'+
@@ -237,16 +270,35 @@ AvatarHover.prototype.getPanel = function() {
 				'<td><input type="color" placeholder="0px" id="avatarBorderColor" value="'+
 				this.settings['avatarBorderColor']+
 				'"></td></tr>' + 
+
     	'<tr><td><hr></td><td></td></tr>'+
     	'<tr><td><label for="avatarIsShown">Avatar Force Show: </label></td>'+
 				'<td><input type="checkbox" id="avatarIsShown" '+
 				(this.settings['isShown'] ? "checked": "")+
 				'></td></tr>' + 
-    	'<tr><td><hr></td><td></td></tr>'+
     	'<tr><td><label for="avatarIsLarge">Avatar Force Large: </label></td>'+
 				'<td><input type="checkbox" id="avatarIsLarge" '+
 				(this.settings['isLarge'] ? "checked": "")+
 				'></td></tr>' + 
+
+		'<tr><td><hr></td><td></td></tr>'+
+		'<tr><td><label for="avatarIsHoverGuilds">Hover Guilds: </label></td>'+
+				'<td><input type="checkbox" id="avatarIsHoverGuilds" '+
+				(this.settings['isHoverGuilds'] ? "checked": "")+
+				'></td></tr>' + 
+		'<tr><td><label for="avatarIsHoverChannels">Hover Channels/DM Users: </label></td>'+
+				'<td><input type="checkbox" id="avatarIsHoverChannels" '+
+				(this.settings['isHoverChannels'] ? "checked": "")+
+				'></td></tr>' + 
+		'<tr><td><label for="avatarIsHoverChatMessages">Hover Chat Messages: </label></td>'+
+				'<td><input type="checkbox" id="avatarIsHoverChatMessages" '+
+				(this.settings['isHoverChatMessages'] ? "checked": "")+
+				'></td></tr>' + 
+		'<tr><td><label for="avatarIsHoverChatUsers">Hover Chat Users: </label></td>'+
+				'<td><input type="checkbox" id="avatarIsHoverChatUsers" '+
+				(this.settings['isHoverChatUsers'] ? "checked": "")+
+				'></td></tr>' + 
+
     	'<tr><td><hr></td><td><hr></td></tr>'+
     	'<tr><td></td><td>'+
     	'<button '+
