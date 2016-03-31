@@ -54,7 +54,7 @@ var AvatarHover  = function() {
 	};
 
 	this.getDescription = function() {
-		return "When hovering Avatar use Ctrl / Ctrl+Shift";
+		return "When hovering, resize the avatar. Use Ctrl / Ctrl+Shift";
 	};
 
 	this.getAuthor = function() {
@@ -241,7 +241,7 @@ AvatarHover.prototype.getPanel = function() {
 	 	'	border-right:0px; text-indent:4px; padding:3px; padding-left:0px; padding-right:0px;'+
 	 	'	width:100%; font-weight:bold; background-color: #122334 }'+
 
-		'table.avatarSettings { width:90%; margin:30px; margin-top:10px; padding-top:20px }'+
+		'table.avatarSettings { width:90%; margin:5px; }'+
 		'table.avatarSettings td:last-child { text-align:center }'+
 		'table.avatarSettings label { color:white; font-weight:700; text-indent: 4px }'+
 		'table.avatarSettings hr { border:1px solid white }'+

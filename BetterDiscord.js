@@ -34,10 +34,15 @@ var _cacheExpired = false;
 var _cacheDays = 0;
 
 var _os = process.platform;
-var _dataPath = _os == "win32" ? process.env.APPDATA : _os == 'darwin' ? process.env.HOME + '/Library/Preferences' : '/var/local';
+var _proc_user = process.env.USERPROFILE;
+var _proc_appdata = process.env.APPDATA || _proc_user + "/AppData/Roaming";
+
+var _dataPath = _os == "win32" ? _proc_appdata : _os == 'darwin' ? process.env.HOME + '/Library/Preferences' : '/var/local';
 	_dataPath += "/BetterDiscord";
 
 var _userFile = _dataPath + "/user.json";
+var _pluginsPath = _dataPath + "/plugins";
+var _themesPath = _dataPath + "/themes";
 
 //IDE
 /*_config = {
@@ -86,14 +91,14 @@ BetterDiscord.prototype.SecureTryCatch = function(callback) {
 	try {
 		callback();
 	}catch(ex) {
-		_utils.jsLog('BD STC: ' + ex, 'error');
+		_utils.jsLog('SecureTryCatch: ' + ex, 'error');
 	}
 };
 
 BetterDiscord.prototype.init = function() {
 	this.createDirPath(_dataPath);
-	this.createDirPath(_dataPath + "/plugins");
-	this.createDirPath(_dataPath + "/themes");
+	this.createDirPath(_pluginsPath);
+	this.createDirPath(_themesPath);
 	this.checkCacheFile(_userFile);
 	this.checkVersion();
 };
@@ -113,6 +118,7 @@ BetterDiscord.prototype.checkCacheFile = function(path) {
     //Userfile doesn't exist
     if(_userConfig.cache == null) {
     	_userConfig.cache = new Date();
+    	_cacheExpired = true;
     } else {
     	var currentDate = new Date();
     	var cacheDate = new Date(_userConfig.cache);
@@ -153,14 +159,6 @@ BetterDiscord.prototype.checkUpdater = function() {
 	});
 };
 
-BetterDiscord.prototype.DispatchEvents = function() {
-	if(_this.eventPoll.hasOwnProperty("dom-ready") && 
-		_this.eventPoll["dom-ready"] > 0) {
-		_this.load();
-	_this.eventPoll["dom-ready"] = 0;
-}
-};
-
 BetterDiscord.prototype.start = function() {
 	this.eventInterval = setInterval(this.DispatchEvents, 3000);
 };
@@ -169,11 +167,21 @@ BetterDiscord.prototype.stop = function() {
 	clearInterval(this.eventInterval);
 };
 
-BetterDiscord.prototype.load = function() {
-	_mainWindow.webContents.executeJavaScript('var themesupport2 = true');
+BetterDiscord.prototype.DispatchEvents = function() {
+	if(_this.eventPoll.hasOwnProperty("dom-ready") && 
+		_this.eventPoll["dom-ready"] > 0) {
+		_this.load();
+		_this.eventPoll["dom-ready"] = 0;
+	}
+};
 
-	this.loadPlugins();
-	this.loadThemes();
+BetterDiscord.prototype.load = function() {
+	_utils.execJs('var themesupport2 = true');
+	_utils.execJs('var bdplugins = {};');
+	_utils.execJs('var bdthemes = {};');
+
+	this.loadDir(_pluginsPath, this.loadPlugin);
+	this.loadDir(_themesPath, this.loadTheme);
 
 	this.alertNewVersion();
 
@@ -184,63 +192,57 @@ BetterDiscord.prototype.load = function() {
 	this.IPCAsyncMessageInit();
 };
 
-BetterDiscord.prototype.loadPlugins = function() {
-	_mainWindow.webContents.executeJavaScript('var bdplugins = {};');
-
-	_fs.readdir(_dataPath + "/plugins", function(err, files) {
-		if(err) return;
-
-		files.forEach(function(fileName) {
-			var pluginContent = _fs.readFileSync(_dataPath + "/plugins/" + fileName, 'utf8');
-			var meta = pluginContent.split('\n')[0];
-			if (meta.indexOf('META') < 0) {
-				_utils.jsLog('BetterDiscord: ERROR[Plugin META not found in file: ' + fileName + ']', 'warn');
-				return;
-			}
-			var pluginVar = meta.substring(meta.lastIndexOf('//META') + 6, meta.lastIndexOf('*\//'));
-			_this.SecureTryCatch(function() {
-				var parse = JSON.parse(pluginVar);
-				var pluginName = parse['name'];
-				_mainWindow.webContents.executeJavaScript(pluginContent);
-				_mainWindow.webContents.executeJavaScript('(function() { var plugin = new ' + pluginName + '(); bdplugins[plugin.getName()] = { "plugin": plugin, "enabled": false } })();')
-
-				_utils.jsLog('BetterDiscord: Loading Plugin: ' + pluginName, 'log');
-			});
-		});
-	});
-};
-
-BetterDiscord.prototype.loadThemes = function() {
-	_fs.readdir(_dataPath + '/themes/', function(err, files) {
+BetterDiscord.prototype.loadDir = function(path, callback) {
+	_fs.readdir(path, function(err, files) {
 		if (err) return;
-
-		_mainWindow.webContents.executeJavaScript('var bdthemes = {};');
-		files.forEach(function(fileName) {
-			var theme = _fs.readFileSync(_dataPath + '/themes/' + fileName, 'utf8');
-			var split = theme.split('\n');
-			var meta = split[0];
-			if (meta.indexOf('META') < 0) {
-				_utils.jsLog('BetterDiscord: ERROR[Theme META not found in file: ' + fileName + ']', 'warn');
-				return;
-			}
-			var themeVar = meta.substring(meta.lastIndexOf('//META') + 6, meta.lastIndexOf('*\//'));
-			_this.SecureTryCatch(function() {
-				var parse = JSON.parse(themeVar);
-				var themeName = parse['name'];
-				var themeAuthor = parse['author'];
-				var themeDescription = parse['description'];
-				var themeVersion = parse['version'];
-
-                /*split.splice(0, 1);
-                theme = split.join('\n');
-                theme = theme.replace(/(\r\n|\n|\r)/gm, '');*/
-                _mainWindow.webContents.executeJavaScript('(function() { bdthemes["' + themeName + '"] = { "enabled": false, "name": "' + themeName + '", "css": "' + escape(theme) + '", "description": "' + themeDescription + '", "author":"' + themeAuthor + '", "version":"' + themeVersion + '"  } })();');
-
-                _utils.jsLog('BetterDiscord: Loading Theme: ' + themeName, 'log');
-            });
-		});
+		files.forEach(callback);
 	});
 };
+
+BetterDiscord.prototype.loadPlugin = function(fileName) {
+	_this.SecureTryCatch(function() {
+		var pluginContent = _fs.readFileSync(_pluginsPath + "/" + fileName, 'utf8');
+		
+		var meta = pluginContent.split('\n')[0];
+		if (meta.indexOf('META') < 0) {
+			_utils.jsLog('BetterDiscord: ERROR[Plugin META not found in file: ' + fileName + ']', 'warn');
+			return;
+		}
+		var pluginVar = meta.substring(meta.lastIndexOf('//META') + 6, meta.lastIndexOf('*\//'));
+	
+		var parse = JSON.parse(pluginVar);
+		var pluginName = parse['name'];
+		_utils.execJs(pluginContent);
+		_utils.execJs('(function() { var plugin = new ' + pluginName + '(); bdplugins[plugin.getName()] = { "plugin": plugin, "enabled": false } })();')
+
+		_utils.jsLog('BetterDiscord: Loading Plugin: ' + pluginName, 'log');
+	});
+		
+};
+
+BetterDiscord.prototype.loadTheme = function(fileName) {
+	_this.SecureTryCatch(function() {
+		var theme = _fs.readFileSync(_themesPath + "/" + fileName, 'utf8');
+		var split = theme.split('\n');
+		var meta = split[0];
+		if (meta.indexOf('META') < 0) {
+			_utils.jsLog('BetterDiscord: ERROR[Theme META not found in file: ' + fileName + ']', 'warn');
+			return;
+		}
+		var themeVar = meta.substring(meta.lastIndexOf('//META') + 6, meta.lastIndexOf('*\//'));
+	
+		var parse = JSON.parse(themeVar);
+		var themeName = parse['name'];
+		var themeAuthor = parse['author'];
+		var themeDescription = parse['description'];
+		var themeVersion = parse['version'];
+
+        _utils.execJs('(function() { bdthemes["' + themeName + '"] = { "enabled": false, "name": "' + themeName + '", "css": "' + escape(theme) + '", "description": "' + themeDescription + '", "author":"' + themeAuthor + '", "version":"' + themeVersion + '"  } })();');
+
+        _utils.jsLog('BetterDiscord: Loading Theme: ' + themeName, 'log');
+    });
+};
+
 
 BetterDiscord.prototype.alertNewVersion = function() {
 	if(_updater.LatestVersion > this.version) {
@@ -437,7 +439,7 @@ BetterDiscord.prototype.ipcAsyncMessage = function(event, arg) {
 
 	if(arg == "start-bd") {
 		_utils.updateLoading("Starting Up", 100, 100);
-		_utils.execJs('var mainCore; var startBda = function() { mainCore = new Core(); mainCore.init(); }; startBda();');
+		_utils.execJs('var mainCore = new Core(); mainCore.init();');
 
         //Remove loading node
         setTimeout(function() {
@@ -447,34 +449,29 @@ BetterDiscord.prototype.ipcAsyncMessage = function(event, arg) {
 };
 
 BetterDiscord.prototype.parseEmoteData = function(loadMe, emoteData) {
-	var returnData;
-
-	switch(loadMe.specialparser) {
-
-        case 0: //Twitch Global Emotes
-        	returnData = emoteData.replace(/\$/g, "\\$").replace(/'/g, "\\'").replace(/"/g, "\\\"");
-        	break;
-        case 1: //Twitch Subscriber Emotes
-	        returnData = {};
-	        emoteData = JSON.parse(emoteData);
-	        var channels = emoteData["channels"];
-	        for(var channel in channels) {
-	        	var emotes = channels[channel]["emotes"];
-	        	for(var i = 0 ; i < emotes.length ; i++) {
-	        		var code = emotes[i]["code"];
-	        		var id = emotes[i]["image_id"];
-	        		returnData[code] = id;
-	        	}
-	        }
-
-	        returnData = JSON.stringify(returnData);
-	        break;
-        case 2: //FFZ Emotes
-	        returnData = emoteData;
-	        break;
-        case 3: //BTTV Emotes
-	        returnData = {};
-	        _this.SecureTryCatch(function() {
+	var returnData = {};
+	_this.SecureTryCatch(function() {
+		switch(loadMe.specialparser) {
+	        case 0: //Twitch Global Emotes
+	        	returnData = emoteData.replace(/\$/g, "\\$").replace(/'/g, "\\'").replace(/"/g, "\\\"");
+	        	break;
+	        case 1: //Twitch Subscriber Emotes
+		        emoteData = JSON.parse(emoteData);
+		        var channels = emoteData["channels"];
+		        for(var channel in channels) {
+		        	var emotes = channels[channel]["emotes"];
+		        	for(var i = 0 ; i < emotes.length ; i++) {
+		        		var code = emotes[i]["code"];
+		        		var id = emotes[i]["image_id"];
+		        		returnData[code] = id;
+		        	}
+		        }
+		        returnData = JSON.stringify(returnData);
+		        break;
+	        case 2: //FFZ Emotes
+		        returnData = emoteData;
+		        break;
+	        case 3: //BTTV Emotes
 	        	emoteData = JSON.parse(emoteData);
 
 	        	for(var emote in emoteData.emotes) {
@@ -484,16 +481,15 @@ BetterDiscord.prototype.parseEmoteData = function(loadMe, emoteData) {
 
 	        		returnData[code] = url;
 	        	}
-	        });
+		        
+		        returnData = JSON.stringify(returnData);
+		        break;
+	        case 4: 
+		        returnData = emoteData;
+		        break;
 
-	        returnData = JSON.stringify(returnData);
-	        break;
-        case 4: 
-	        returnData = emoteData;
-	        break;
-
-    }
-
+	    }
+    });
     return returnData;
 };
 
