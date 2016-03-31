@@ -71,6 +71,7 @@ AvatarHover.prototype.settings = {
 	"isLarge": false,
 	"isHoverGuilds": false,
 	"isHoverChannels": true,
+	"isHoverFriends": true,
 	"isHoverChatMessages": true,
 	"isHoverChatUsers": true,
 	"avatarBackgroundColor":"#303336",
@@ -114,6 +115,10 @@ AvatarHover.prototype.init = function() {
 		this.selector("div.channels-wrap", ".avatar-small");
 		this.selector("div.channels-wrap", ".avatar-large");
 	}
+	if(this.settings['isHoverFriends']) {
+		this.selector("div.friends-table", ".avatar-small");
+		this.selector("div.friends-table", ".avatar-large");
+	}
 	if(this.settings['isHoverChatMessages']) {
 		this.selector("div.messages-wrapper", ".avatar-small");
 		this.selector("div.messages-wrapper", ".avatar-large");
@@ -141,8 +146,7 @@ AvatarHover.prototype.selector = function (elem, subElemClass) {
 						"display":"block", 
 						"background-color": that.settings['avatarBackgroundColor'],
 						"border-radius": that.settings['avatarBorderRadius'], 
-						"border": that.settings['avatarBorderSize'] +  " solid "+
-						that.settings['avatarBorderColor'],
+						"border": that.settings['avatarBorderSize'] + " solid "+ that.settings['avatarBorderColor'],
 						"background-image": $(this).css("background-image")
 					});
 				}
@@ -201,6 +205,7 @@ AvatarHover.prototype.setSettings = function() {
 	this.settings['isLarge'] = $('#avatarIsLarge').is(':checked');
 	this.settings['isHoverGuilds'] = $('#avatarIsHoverGuilds').is(':checked');
 	this.settings['isHoverChannels'] = $('#avatarIsHoverChannels').is(':checked');
+	this.settings['isHoverFriends'] = $('#avatarIsHoverFriends').is(':checked');
 	this.settings['isHoverChatMessages'] = $('#avatarIsHoverChatMessages').is(':checked');
 	this.settings['isHoverChatUsers'] = $('#avatarIsHoverChatUsers').is(':checked');
 
@@ -290,6 +295,10 @@ AvatarHover.prototype.getPanel = function() {
 				'<td><input type="checkbox" id="avatarIsHoverChannels" '+
 				(this.settings['isHoverChannels'] ? "checked": "")+
 				'></td></tr>' + 
+		'<tr><td><label for="avatarIsHoverFriends">Hover Friends List: </label></td>'+
+				'<td><input type="checkbox" id="avatarIsHoverFriends" '+
+				(this.settings['isHoverFriends'] ? "checked": "")+
+				'></td></tr>' + 
 		'<tr><td><label for="avatarIsHoverChatMessages">Hover Chat Messages: </label></td>'+
 				'<td><input type="checkbox" id="avatarIsHoverChatMessages" '+
 				(this.settings['isHoverChatMessages'] ? "checked": "")+
@@ -311,6 +320,6 @@ AvatarHover.prototype.getPanel = function() {
         '	$("#bd-psm-s").parent().css({"background-color": "transparent"}); '+
         '	$("#bd-psm-s").parent().parent().css({'+
         '		"background-color": "transparent", "box-shadow":"0 0 10px 5px rgba(150,200,100,.75)"'+
-        '	}); console.log(__dirname); '+
+        '	});'+
         '});</script>';
 };
