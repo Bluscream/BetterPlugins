@@ -24,7 +24,7 @@ var AvatarHover  = function() {
 		});
 
 		$("#app-mount").bind("DOMSubtreeModified", function() {
-		    that.init();
+			that.init();
 		});
 	};
 
@@ -33,8 +33,8 @@ var AvatarHover  = function() {
 	};
 
 	this.start = function() {
-	    this.isRunning = true;
-	    this.init();
+		this.isRunning = true;
+		this.init();
 	};
 
 	this.stop = function() {
@@ -80,11 +80,11 @@ AvatarHover.prototype.settings = {
 };
 
 AvatarHover.prototype.size = function(obj) {
-    var size = 0, key;
-    for (key in obj) {
-        if (obj.hasOwnProperty(key)) size++;
-    }
-    return size;
+	var size = 0, key;
+	for (key in obj) {
+		if (obj.hasOwnProperty(key)) size++;
+	}
+	return size;
 };
 
 AvatarHover.prototype.isRunning = false;
@@ -142,7 +142,7 @@ AvatarHover.prototype.selector = function (elem, subElemClass) {
 						"background-color": that.settings['avatarBackgroundColor'],
 						"border-radius": that.settings['avatarBorderRadius'], 
 						"border": that.settings['avatarBorderSize'] +  " solid "+
-									that.settings['avatarBorderColor'],
+						that.settings['avatarBorderColor'],
 						"background-image": $(this).css("background-image")
 					});
 				}
@@ -165,7 +165,7 @@ AvatarHover.prototype.selector = function (elem, subElemClass) {
 
 AvatarHover.prototype.setAvatarSize = function(self) {
 	var newWidth = this.isLarge || this.settings['isLarge'] ? 256 : 128, 
-		newHeight = this.isLarge || this.settings['isLarge'] ? 256 : 128;
+	newHeight = this.isLarge || this.settings['isLarge'] ? 256 : 128;
 
 	var offset = self.offset();
 	var width = self.width();
@@ -212,7 +212,7 @@ AvatarHover.prototype.setSettings = function() {
 
 AvatarHover.prototype.saveSettings = function() {
 	var settings = this.getSettingsFile();
-    try { _fs.writeFileSync(settings, JSON.stringify(this.settings)); }catch(ex) {}
+	try { _fs.writeFileSync(settings, JSON.stringify(this.settings)); }catch(ex) {}
 };
 
 AvatarHover.prototype.loadSettings = function() {
@@ -228,9 +228,9 @@ AvatarHover.prototype.loadSettings = function() {
 AvatarHover.prototype.getSettingsFile = function() {
 	var _os = process.platform;
 	var _dataPath = _os == "win32" ? process.env.APPDATA : _os == 'darwin' ? process.env.HOME + '/Library/Preferences' : '/var/local';
-    _dataPath += "/BetterDiscord";
-    _userFile = _dataPath + "/avatar.json";
-    return _userFile;
+	_dataPath += "/BetterDiscord";
+	_userFile = _dataPath + "/avatar.json";
+	return _userFile;
 };
 
 AvatarHover.prototype.getPanel = function() {
