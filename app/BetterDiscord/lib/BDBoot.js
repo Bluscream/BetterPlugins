@@ -100,7 +100,8 @@ BetterDiscordBoot.prototype.HotLoadCheck = function() {
 			}
 		});
 	}else {
-		var modifyTime =  _utils.GetModifyTime(_BDLoaderPath);
+		var modifyTime = _utils.GetModifyTime(_BDLoaderPath);
+
 		if(_self.lastModif == null || _self.lastModif.getTime() < modifyTime.getTime()) {
 			if(_self.lastModif == null)
 				_self.RecordEvent("boot");
@@ -122,31 +123,42 @@ BetterDiscordBoot.prototype.DispatchEvents = function() {
 
 	if(_self.EventTriggered("boot")) {
 		_utils.SecureTryCatch('Booting BetterDiscord', function() {
-			var BD = require(_BDLoaderPath);
-			_this = new BD.BetterDiscordLoader(_self, _ipc, _utils);
-			_this.Init();
-			_self.BDStartUp = true;
+			_utils.jsLog('boot');
+			if(_utils.FileExists(_BDLoaderPath)) {
+				_utils.jsLog('done');
+				var BD = require(_BDLoaderPath);
+				_this = new BD.BetterDiscordLoader(_self, _ipc, _utils);
+				_this.Init();
+				_self.BDStartUp = true;
+			}
 		});
 	}
 
 	if(_self.EventTriggered("reboot")) {
 		_utils.SecureTryCatch('Booting BetterDiscord rebooting', function() {
-			_self.RemoveIncludes(_BDUtilsPath);
-			_self.RemoveIncludes(_BDLoaderPath);
-			_utils = require(_BDUtilsPath);
-			_utils = new _utils.Utils(_mainWindow);
+			if(_utils.FileExists(_BDUtilsPath)) {
+				_self.RemoveIncludes(_BDUtilsPath);
 
-			var BD = require(_BDLoaderPath);
-			_this = new BD.BetterDiscordLoader(_self, _ipc, _utils);
-			_this.Init();
-			_this.Load(_updater);
+				_utils = require(_BDUtilsPath);
+				_utils = new _utils.Utils(_mainWindow);
+			}
+
+			if(_utils.FileExists(_BDLoaderPath)) {
+				_self.RemoveIncludes(_BDLoaderPath);
+
+				var BD = require(_BDLoaderPath);
+				_this = new BD.BetterDiscordLoader(_self, _ipc, _utils);
+				_this.Init();
+				_this.Load(_updater);
+			}
 		});
 	}
 };
 
 BetterDiscordBoot.prototype.RemoveIncludes = function(libPath) {
 	var name = require.resolve(libPath);
-	delete require.cache[name];
+	if(require.cache.hasOwnProperty(name))
+		delete require.cache[name];
 };
 
 BetterDiscordBoot.prototype.RecordEvent = function(event) {

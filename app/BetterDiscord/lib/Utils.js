@@ -41,19 +41,22 @@ Utils.prototype.MyDump = function(arr, level) {
                 dumped_text += level_padding + "'" + item + "' => \"" + value + "\"\n";
             }
         }
-    } else { 
-        dumped_text = "===>"+arr+"<===("+typeof(arr)+")";
-    }
+    } 
+
     return dumped_text.replaceAll('"', '`');
 };
 
-Utils.prototype.SecureTryCatch = function(message, callback) {
+/*  BOOLEAN RESULT MOTHER FUCKERS CAUSE FUCK YEAH ! */ 
+Utils.prototype.SecureTryCatch = function(message, callback, silent) {
     try {
-        callback();
+        return callback() || false;
     }catch(ex) {
-        this.jsLog('SecureTryCatch: ' + message);
-        this.jsLog('SecureTryCatch: ' + ex, 'error');
+        if(!silent) {
+            this.jsLog('SecureTryCatch: ' + message);
+            this.jsLog('SecureTryCatch: ' + ex, 'error');
+        }
     }
+    return false;
 };
 
 Utils.prototype.GetModifyTime = function(filePath) {
@@ -61,14 +64,27 @@ Utils.prototype.GetModifyTime = function(filePath) {
     this.SecureTryCatch('Utils->GetModifyTime(Get file stat)', function() {
         var stat = _fs.statSync(filePath);
         modifyTime = stat.mtime;
-    });
+    }, true);
     return modifyTime;
 }
 
 Utils.prototype.CreateDirPath = function(dirPath) {
-    var stat = _fs.statSync(dirPath);
-    if(!stat.isDirectory())
+    if(!this.DirExists(dirPath)) 
         _fs.mkdirSync(dirPath);
+};
+
+Utils.prototype.DirExists = function(dirPath) {
+    return this.SecureTryCatch('folder "'+dirPath+'" doesn\'t exists', function() {
+        var stat = _fs.statSync(dirPath);
+        return stat.isDirectory();
+    }, true);
+};
+
+Utils.prototype.FileExists = function(filePath) {
+    return this.SecureTryCatch('file "'+filePath+'" doesn\'t exists', function() {
+        var stat = _fs.statSync(filePath);
+        return stat.isFile();
+    }, true);
 };
 
 Utils.prototype.LoadDir = function(path, callback) {
