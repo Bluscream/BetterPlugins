@@ -144,13 +144,6 @@ Utils.prototype.DownloadHTTP = function(url, callback) {
     });
 }
 
-Utils.prototype.getHash = function(beta, callback) {
-    var branch = beta ? "beta" : "master";
-    this.download("api.github.com", "/repos/Jiiks/BetterDiscordApp/commits/"+branch+"", function(data) {
-        callback(JSON.parse(data).sha);
-    });
-}
-
 Utils.prototype.sendIcpAsync = function(message) {
     this.execJs('betterDiscordIPC.send("asynchronous-message", "'+message+'");');
 }
@@ -186,6 +179,7 @@ Utils.prototype.log = function(message) {
     console.log("BetterDiscord: " + message);
     logs += message + eol;
 }
+
 Utils.prototype.saveLogs = function(path) {
     _fs.writeFileSync(path + "/logs.log", logs);
 }
@@ -195,40 +189,34 @@ Utils.prototype.execJs = function(js) {
     _mainWindow.webContents.executeJavaScript(js);
 }
 
-//Parse and execute javascript
-Utils.prototype.execJsParse = function(js) {
-    this.execJs(js); //TODO
-}
+Utils.prototype.injectStylesheetSync = function(loadMe) {
+    this.execJs('(function() {\
+        var e = document.getElementById("'+loadMe.elemId+'");\
+        if(e) e.parentNode.removeChild(e); \
+        var stylesheet = document.createElement("link"); \
+        stylesheet.id="'+loadMe.elemId+'"; \
+        stylesheet.rel="stylesheet"; \
+        stylesheet.type = "text/css"; \
+        document.getElementsByTagName("head")[0].appendChild(stylesheet); \
+        stylesheet.href = "'+loadMe.url+'"; \
+    })();');
 
-//Css internal style injector
-Utils.prototype.injectStylesheet = function(url) {
-    var self = this;
-    this.download(url, function(data) {
-        var js = 'var style = document.createElement("style"); style.type = "text/css"; style.innerHTML = "'+data+'";';
-        self.injectToElementByTag("head", js, "style");
-    });
-}
-
-Utils.prototype.injectStylesheetSync = function(url, callbackMessage) {
-    this.execJs('$("head").append(" <link rel=\'stylesheet\' href=\''+url+'\'> ");');
-    this.sendIcpAsync(callbackMessage);
+    this.sendIcpAsync(loadMe.message);
 };
 
-Utils.prototype.headStyleSheet = function(url) {
-    this.execJs('(function() { var stylesheet = document.createElement("link"); stylesheet.type = "text/css"; document.getElementsByTagName("head")[0].appendChild(stylesheet); stylesheet.href = "'+url+'" })();')
-}
-
-Utils.prototype.injectJavaScriptSync = function(url, callbackMessage) {
-    this.execJs(' (function() {var e = document.getElementById("'+callbackMessage+'"); if(e) e.parentNode.removeChild(e); var script = document.createElement("script"); script.id="'+callbackMessage+'"; script.type = "text/javascript"; script.onload = function() { betterDiscordIPC.send("asynchronous-message", "'+callbackMessage+'"); }; document.getElementsByTagName("body")[0].appendChild(script); script.src = "'+url+'"; })(); ');
-}
-
-Utils.prototype.injectJavaScript = function(url, jquery) {
-    if(!jquery) {
-        this.execJs('(function() { var script = document.createElement("script"); script.type = "text/javascript"; document.getElementsByTagName("body")[0].appendChild(script); script.src = "' + url + '"; })();');
-    }else {
-        this.execJs(' (function() { function injectJs() { var script = document.createElement("script"); script.type = "text/javascript"; document.getElementsByTagName("body")[0].appendChild(script); script.src = "' + url + '"; } function jqDefer() { if(window.jQuery) { injectJs(); }else{ setTimeout(function() { jqDefer(); }, 100) } } jqDefer(); })(); ');
-    }
-
+Utils.prototype.injectJavaScriptSync = function(loadMe) {
+    this.execJs(' (function() {\
+        var e = document.getElementById("'+loadMe.elemId+'"); \
+        if(e) e.parentNode.removeChild(e); \
+        var script = document.createElement("script"); \
+        script.id="'+loadMe.elemId+'"; \
+        script.type = "text/javascript"; \
+        script.onload = function() { \
+            betterDiscordIPC.send("asynchronous-message", "'+loadMe.message+'"); \
+        }; \
+        document.getElementsByTagName("body")[0].appendChild(script); \
+        script.src = "'+loadMe.url+'"; \
+    })(); ');
 }
 
 exports.Utils = Utils;

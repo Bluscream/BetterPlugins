@@ -40,11 +40,11 @@ BetterDiscordLoader.prototype.Init = function () {
 	_utils.CreateDirPath(_dataPath);
 	_utils.CreateDirPath(_pluginsPath);
 	_utils.CreateDirPath(_themesPath);
-	_cacheExpired = _utils.CheckCacheFile(_eCacheFile, 24);
 };
 
 BetterDiscordLoader.prototype.Load = function(updaterData) {
 	_updater = updaterData;
+	_cacheExpired = _utils.CheckCacheFile(_eCacheFile, 24);
 
 	_utils.execJs('var themesupport2 = true');
 	_utils.execJs('var bdplugins = {};');
@@ -69,7 +69,7 @@ BetterDiscordLoader.prototype.LoadPlugin = function(fileName) {
 		
 		var meta = pluginContent.split('\n')[0];
 		if (meta.indexOf('META') < 0) {
-			_utils.jsLog('BetterDiscord: ERROR[Plugin META not found in file: ' + fileName + ']', 'warn');
+			_utils.jsLog('plugin META not found in file, ' + fileName, 'warn');
 			return;
 		}
 		var pluginVar = meta.substring(meta.lastIndexOf('//META') + 6, meta.lastIndexOf('*\//'));
@@ -77,9 +77,12 @@ BetterDiscordLoader.prototype.LoadPlugin = function(fileName) {
 		var parse = JSON.parse(pluginVar);
 		var pluginName = parse['name'];
 		_utils.execJs(pluginContent);
-		_utils.execJs('(function() { var plugin = new ' + pluginName + '(); bdplugins[plugin.getName()] = { "plugin": plugin, "enabled": false } })();')
+		_utils.execJs('(function() { \
+			var plugin = new ' + pluginName + '(); \
+			plugin.unload();plugin.unload();\
+			bdplugins[plugin.getName()] = { "plugin": plugin, "enabled": false } })();')
 
-		_utils.jsLog('BetterDiscord: Loading Plugin: ' + pluginName, 'log');
+		_utils.jsLog('loading plugin ' + pluginName, 'log');
 	});
 		
 };
@@ -90,7 +93,7 @@ BetterDiscordLoader.prototype.LoadTheme = function(fileName) {
 		var split = theme.split('\n');
 		var meta = split[0];
 		if (meta.indexOf('META') < 0) {
-			_utils.jsLog('BetterDiscord: ERROR[Theme META not found in file: ' + fileName + ']', 'warn');
+			_utils.jsLog('theme META not found in file: ' + fileName, 'warn');
 			return;
 		}
 		var themeVar = meta.substring(meta.lastIndexOf('//META') + 6, meta.lastIndexOf('*\//'));
@@ -103,7 +106,7 @@ BetterDiscordLoader.prototype.LoadTheme = function(fileName) {
 
         _utils.execJs('(function() { bdthemes["' + themeName + '"] = { "enabled": false, "name": "' + themeName + '", "css": "' + escape(theme) + '", "description": "' + themeDescription + '", "author":"' + themeAuthor + '", "version":"' + themeVersion + '"  } })();');
 
-        _utils.jsLog('BetterDiscord: Loading Theme: ' + themeName, 'log');
+        _utils.jsLog('loading theme ' + themeName, 'log');
     });
 };
 
@@ -118,6 +121,7 @@ BetterDiscordLoader.prototype.GetIPCNextEvent = function(arg) {
 		'load-jQuery': {
 			'number': 1,
 			'type': 'javascript',
+			'elemId': 'BDjQueryJS',
 			'resource': 'jQuery',
 			'domain': 'ajax.googleapis.com',
 			'url': '//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js',
@@ -128,6 +132,7 @@ BetterDiscordLoader.prototype.GetIPCNextEvent = function(arg) {
 		'load-jQueryUI': {
 			'number': 2,
 			'type': 'javascript',
+			'elemId': 'BDjQueryCookieJS',
 			'resource': 'jQueryUI',
 			'domain': 'cdnjs.cloudflare.com',
 			'url': '//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js',
@@ -138,6 +143,7 @@ BetterDiscordLoader.prototype.GetIPCNextEvent = function(arg) {
 		'load-mainCSS': {
 			'number': 3,
 			'type': 'css',
+			'elemId': 'BDMainCSS',
 			'resource': 'Main CSS',
 			'domain': _updater.CDN,
 			'url': '//' + _updater.CDN + '/' + _updater.REPO + '/BetterDiscordApp/' + _updater.HASH + '/css/main.min.css',
@@ -148,6 +154,7 @@ BetterDiscordLoader.prototype.GetIPCNextEvent = function(arg) {
 		'load-mainJS': {
 			'number': 4,
 			'type': 'javascript',
+			'elemId': 'BDMainJS',
 			'resource': 'Main JS',
 			'domain': _updater.CDN,
 			'url': '//' + _updater.CDN + '/' + _updater.REPO + '/BetterDiscordApp/' + _updater.HASH + '/js/main.min.js',
@@ -264,9 +271,9 @@ BetterDiscordLoader.prototype.IpcAsyncMessage = function(event, arg) {
 		_utils.updateLoading("Loading Resources (" + loadMe.resource + ")", loadMe.number / ipcTask.count * 100, 100);
 
 		if(loadMe.type == 'javascript') {
-			_utils.injectJavaScriptSync(loadMe.url, loadMe.message);
+			_utils.injectJavaScriptSync(loadMe);
 		}else if(loadMe.type == 'css') {
-			_utils.injectStylesheetSync(loadMe.url, loadMe.message);
+			_utils.injectStylesheetSync(loadMe);
 		}else if(loadMe.type == 'json') {
 			_utils.DownloadHTTPS(loadMe.domain, loadMe.url, function(data) {
 				_utils.execJs('var ' + loadMe.variable + ' = ' + data + ';');
@@ -304,7 +311,7 @@ BetterDiscordLoader.prototype.IpcAsyncMessage = function(event, arg) {
         //Remove loading node
         setTimeout(function() {
         	_utils.execJs('$("#bd-status").parent().parent().hide();');
-        }, 2000);
+        }, 1000);
     }
 };
 
