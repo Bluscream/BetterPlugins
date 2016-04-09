@@ -299,7 +299,7 @@ BetterDiscordLoader.prototype.IpcAsyncMessage = function(event, arg) {
 
 	if(arg == "start-bd") {
 		_utils.updateLoading("Starting Up", 100, 100);
-		_utils.execJs('(function() { var mainCore = new Core(); mainCore.init();})();');
+		_utils.execJs('var mainCore = new Core(); mainCore.init();');
 
         //Remove loading node
         setTimeout(function() {
