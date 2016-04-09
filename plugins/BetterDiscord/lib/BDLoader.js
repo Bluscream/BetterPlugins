@@ -1,37 +1,21 @@
-/* BetterDiscordApp Entry
- * Version: 2.1
- * Author: Jiiks | http://jiiks.net
- * Date: 27/08/2015 - 15:51
- * Last Update: 10/02/2015 - 02:05 GMT
+/* BetterDiscord Loader & App Entry
+ * Version: 0.4.1
+ * Author: Jiiks | http://jiiks.net, noVaLue
+ * Date: 08/04/2016
+ * Last Update: 08/04/2016
  * https://github.com/Jiiks/BetterDiscordApp
  */
  'use strict';
-//Imports
+
 var _fs = require("fs");
-var _config = require("./config.json");
-var _utils = require("./utils");
-var _ipc = require('ipc');
-
-
-//Beta flag
-var _beta = false;
 
 var _repo = "Jiiks";
-var _branch = _beta ? "beta" : "master";
-
-//Local flag
-var _local = false;
-var _localServer = "http://localhost";
 
 //Variables
-var _mainWindow;
 var _hash = null;
 var _updater = null;
 
-var _userDefault = { "cache": null };
-var _userConfig = _userDefault;
 var _cacheExpired = false;
-var _cacheDays = 0;
 
 var _os = process.platform;
 var _proc_user = process.env.USERPROFILE;
@@ -40,167 +24,47 @@ var _proc_appdata = process.env.APPDATA || _proc_user + "/AppData/Roaming";
 var _dataPath = _os == "win32" ? _proc_appdata : _os == 'darwin' ? process.env.HOME + '/Library/Preferences' : '/var/local';
 	_dataPath += "/BetterDiscord";
 
-var _userFile = _dataPath + "/user.json";
+var _eCacheFile = _dataPath + "/emotes.json";
 var _pluginsPath = _dataPath + "/plugins";
 var _themesPath = _dataPath + "/themes";
 
-//IDE
-/*_config = {
-    "Core": {
-        "Version": "0.2.5"
-    }
-};*/
-
-var _this;
-var BetterDiscord = function(mainWindow) {
-	this.mainWindow = mainWindow;
-	this.version = _config.Core.Version;
-	this.utils = new _utils.Utils(mainWindow);
-
-    // Useless but maybe used by outside scope functions
-    _this = this;
-    _utils = this.utils;
-    _mainWindow = this.mainWindow;
-
-    this.HandleEvents();
+var _self, _this, _ipc, _utils;
+var BetterDiscordLoader = function (self, ipc, utils) {
+	_ipc = ipc;
+	_self = self;
+	_utils = utils;
+	_this = this;
 };
 
-BetterDiscord.prototype.BDStartUp = false;
-BetterDiscord.prototype.eventPoll = {};
-BetterDiscord.prototype.eventInterval = null;
-
-BetterDiscord.prototype.RecordEvent = function(event) {
-	if(this.eventPoll.hasOwnProperty(event)) {
-		this.eventPoll[event] = this.eventPoll[event] + 1; 
-	}else {
-		this.eventPoll[event] = 1;
-	}
+BetterDiscordLoader.prototype.Init = function () {
+	_utils.CreateDirPath(_dataPath);
+	_utils.CreateDirPath(_pluginsPath);
+	_utils.CreateDirPath(_themesPath);
+	_cacheExpired = _utils.CheckCacheFile(_eCacheFile, 24);
 };
 
-BetterDiscord.prototype.HandleEvents = function () {
-	_mainWindow.webContents.on("dom-ready", function() { _this.RecordEvent("dom-ready"); });
-	_mainWindow.webContents.on("new-window", function() { _this.RecordEvent("new-window"); });
-	_mainWindow.webContents.on("did-fail-load", function() { _this.RecordEvent("did-fail-load"); });
-	_mainWindow.webContents.on("crashed", function() { _this.RecordEvent("crashed"); });
-	_mainWindow.on("focus", function() { _this.RecordEvent("focus"); });
-	_mainWindow.on("blur", function() { _this.RecordEvent("blur"); });
-	_mainWindow.on("close", function() { _this.RecordEvent("close"); });
-};
+BetterDiscordLoader.prototype.Load = function(updaterData) {
+	_updater = updaterData;
 
-BetterDiscord.prototype.SecureTryCatch = function(callback) {
-	try {
-		callback();
-	}catch(ex) {
-		_utils.jsLog('SecureTryCatch: ' + ex, 'error');
-	}
-};
-
-BetterDiscord.prototype.init = function() {
-	this.createDirPath(_dataPath);
-	this.createDirPath(_pluginsPath);
-	this.createDirPath(_themesPath);
-	this.checkCacheFile(_userFile);
-	this.checkVersion();
-};
-
-BetterDiscord.prototype.createDirPath = function(path) {
-	if (!_fs.existsSync(path))
-		_fs.mkdirSync(path);
-};
-
-BetterDiscord.prototype.checkCacheFile = function(path) {
-	if(_fs.existsSync(path)) {
-		this.SecureTryCatch(function() {
-			_userConfig = JSON.parse(_fs.readFileSync(path));
-		});
-	}
-
-    //Userfile doesn't exist
-    if(_userConfig.cache == null) {
-    	_userConfig.cache = new Date();
-    	_cacheExpired = true;
-    } else {
-    	var currentDate = new Date();
-    	var cacheDate = new Date(_userConfig.cache);
-        //Check if cache is expired
-        if(Math.abs(currentDate.getDate() - cacheDate.getDate()) > _cacheDays) {
-        	_userConfig.cache = currentDate;
-        	_cacheExpired = true;
-        }
-    }
-
-    //Write new cache date if expired
-    if(_cacheExpired) {
-    	_fs.writeFileSync(path, JSON.stringify(_userConfig));
-    }
-};
-
-BetterDiscord.prototype.checkVersion = function() {
-	var repoAPIHost = "api.github.com";
-	var repoAPIPathHash = "/repos/" + _repo + "/BetterDiscordApp/commits/" + _branch;
-	_utils.download(repoAPIHost, repoAPIPathHash, function(data) {
-		_this.SecureTryCatch(function() {
-			var tmpRawObj = JSON.parse(data);
-			_hash = tmpRawObj.sha;
-			_this.checkUpdater();
-		});
-	});
-};
-
-BetterDiscord.prototype.checkUpdater = function() {
-	var repoRAWHost = "raw.githubusercontent.com";
-	var repoRAWPathUpdater = "/" + _repo + "/BetterDiscordApp/" + _hash + "/data/updater.json";
-	_utils.download(repoRAWHost, repoRAWPathUpdater, function(data) {
-		_this.SecureTryCatch(function() {
-			var tmpRawObj = JSON.parse(data);
-			_updater = tmpRawObj;
-			_this.start();
-		});
-	});
-};
-
-BetterDiscord.prototype.start = function() {
-	this.eventInterval = setInterval(this.DispatchEvents, 3000);
-};
-
-BetterDiscord.prototype.stop = function() {
-	clearInterval(this.eventInterval);
-};
-
-BetterDiscord.prototype.DispatchEvents = function() {
-	if(_this.eventPoll.hasOwnProperty("dom-ready") && 
-		_this.eventPoll["dom-ready"] > 0) {
-		_this.load();
-		_this.eventPoll["dom-ready"] = 0;
-	}
-};
-
-BetterDiscord.prototype.load = function() {
 	_utils.execJs('var themesupport2 = true');
 	_utils.execJs('var bdplugins = {};');
 	_utils.execJs('var bdthemes = {};');
+    _utils.execJs('var version = "'+ _self.version + '"');
 
-	this.loadDir(_pluginsPath, this.loadPlugin);
-	this.loadDir(_themesPath, this.loadTheme);
+ 	_utils.execJs("var betterDiscordIPC = require('electron').ipcRenderer;");
 
-	this.alertNewVersion();
+	_utils.LoadDir(_pluginsPath, this.LoadPlugin);
+	_utils.LoadDir(_themesPath, this.LoadTheme);
 
-	_utils.execJs('var loadingNode = document.createElement("DIV");');
+	_utils.execJs('var e = document.getElementById("BDSTATUS"); if(e) e.parentNode.removeChild(e); var loadingNode = document.createElement("DIV"); loadingNode.id="BDSTATUS";');
 	_utils.execJs('loadingNode.innerHTML = \' <div style="height:30px;width:100%;background:#282B30;"><div style="padding-right:10px; float:right"> <span id="bd-status" style="line-height:30px;color:#E8E8E8;">BetterDiscord - Loading Libraries : </span><progress id="bd-pbar" value="10" max="100"></progress></div></div> \'');
 	_utils.execJs('var flex = document.getElementsByClassName("flex-vertical flex-spacer")[0]; flex.appendChild(loadingNode);');
 
 	this.IPCAsyncMessageInit();
 };
 
-BetterDiscord.prototype.loadDir = function(path, callback) {
-	_fs.readdir(path, function(err, files) {
-		if (err) return;
-		files.forEach(callback);
-	});
-};
-
-BetterDiscord.prototype.loadPlugin = function(fileName) {
-	_this.SecureTryCatch(function() {
+BetterDiscordLoader.prototype.LoadPlugin = function(fileName) {
+	_utils.SecureTryCatch('BetterDiscordLoader->loadPlugin', function() {
 		var pluginContent = _fs.readFileSync(_pluginsPath + "/" + fileName, 'utf8');
 		
 		var meta = pluginContent.split('\n')[0];
@@ -220,8 +84,8 @@ BetterDiscord.prototype.loadPlugin = function(fileName) {
 		
 };
 
-BetterDiscord.prototype.loadTheme = function(fileName) {
-	_this.SecureTryCatch(function() {
+BetterDiscordLoader.prototype.LoadTheme = function(fileName) {
+	_utils.SecureTryCatch('BetterDiscordLoader->loadPlugin', function() {
 		var theme = _fs.readFileSync(_themesPath + "/" + fileName, 'utf8');
 		var split = theme.split('\n');
 		var meta = split[0];
@@ -243,82 +107,70 @@ BetterDiscord.prototype.loadTheme = function(fileName) {
     });
 };
 
+BetterDiscordLoader.prototype.IPCAsyncMessageInit = function() {
+	_utils.updateLoading("Loading Resources", 0, 100);
 
-BetterDiscord.prototype.alertNewVersion = function() {
-	if(_updater.LatestVersion > this.version) {
-		_utils.execJs('alert("An update for BetterDiscord is available(v'+ _updater.LatestVersion +')! Download the latest !")');
-	}
+    this.IpcAsyncMessage('asynchronous-message', 'load-jQuery');
 };
 
-BetterDiscord.prototype.IPCAsyncMessageInit = function() {
-	_utils.execJs("var betterDiscordIPC = require('ipc');");
-
-	if(!_this.BDStartUp) {
-		_ipc.on('asynchronous-message', function(event, arg) { _this.ipcAsyncMessage(event, arg); });
-		_this.BDStartUp = true;  
-	}
-
-    //Inject version
-    _utils.execJs('var version = "'+this.version+'"');
-    //Inject cdn
-    _utils.execJs('var bdcdn = "' + _updater.CDN + '";');
-    //Load jQuery
-    _utils.updateLoading("Loading Resources(jQuery)", 0, 100);
-    _utils.injectJavaScriptSync("//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js", "load-jQueryUI");
-};
-
-
-var loadCount = 0;
-BetterDiscord.prototype.ipcAsyncMessage = function(event, arg) {
-	var libCount = 9;
-
+BetterDiscordLoader.prototype.GetIPCNextEvent = function(arg) {
 	var loadUs = {
+		'load-jQuery': {
+			'number': 1,
+			'type': 'javascript',
+			'resource': 'jQuery',
+			'domain': 'ajax.googleapis.com',
+			'url': '//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js',
+			'message': 'load-jQueryUI',
+			'cacheable': false,
+			'variable': null
+		},
 		'load-jQueryUI': {
+			'number': 2,
 			'type': 'javascript',
 			'resource': 'jQueryUI',
 			'domain': 'cdnjs.cloudflare.com',
 			'url': '//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js',
-			'localurl': null,
 			'message': 'load-mainCSS',
 			'cacheable': false,
 			'variable': null
 		},
 		'load-mainCSS': {
+			'number': 3,
 			'type': 'css',
 			'resource': 'Main CSS',
 			'domain': _updater.CDN,
-			'url': '//' + _updater.CDN + '/' + _repo + '/BetterDiscordApp/' + _hash + '/css/main.min.css',
-			'localurl': _localServer + '/BetterDiscordApp/css/main.css',
+			'url': '//' + _updater.CDN + '/' + _updater.REPO + '/BetterDiscordApp/' + _updater.HASH + '/css/main.min.css',
 			'message': 'load-mainJS',
 			'cacheable': false,
 			'variable': null
 		},
 		'load-mainJS': {
+			'number': 4,
 			'type': 'javascript',
 			'resource': 'Main JS',
 			'domain': _updater.CDN,
-			'url': '//' + _updater.CDN + '/' + _repo + '/BetterDiscordApp/' + _hash + '/js/main.min.js',
-			'localurl': _localServer + '/BetterDiscordApp/js/main.js',
+			'url': '//' + _updater.CDN + '/' + _updater.REPO + '/BetterDiscordApp/' + _updater.HASH + '/js/main.min.js',
 			'message': 'load-publicServers',
 			'cacheable': false,
 			'variable': null
 		},
 		'load-publicServers': {
+			'number': 5,
 			'type': 'json',
 			'resource': 'Public Servers',
 			'domain': _updater.CDN,
-			'url': '/' + _repo + '/BetterDiscordApp/' + _hash + '/data/serverlist.json',
-			'localurl': null,
+			'url': '/' + _updater.REPO + '/BetterDiscordApp/' + _updater.HASH + '/data/serverlist.json',
 			'message': 'load-emoteData-twitchGlobal',
 			'cacheable': false,
 			'variable': 'publicServers'
 		},
 		'load-emoteData-twitchGlobal': {
+			'number': 6,
 			'type': 'emotedata',
 			'resource': 'Twitch Global Emotedata',
 			'domain': 'twitchemotes.com',
 			'url': '/api_cache/v2/global.json',
-			'localurl': null,
 			'message': 'load-emoteData-twitchSub',
 			'cacheable': true,
 			'variable': 'emotesTwitch',
@@ -329,11 +181,11 @@ BetterDiscord.prototype.ipcAsyncMessage = function(event, arg) {
 			'specialparser': 0
 		},
 		'load-emoteData-twitchSub': {
+			'number': 7,
 			'type': 'emotedata',
 			'resource': 'Twitch Subscriber Emotedata',
 			'domain': 'twitchemotes.com',
 			'url': '/api_cache/v2/subscriber.json',
-			'localurl': null,
 			'message': 'load-emoteData-ffz',
 			'cacheable': true,
 			'variable': 'subEmotesTwitch',
@@ -344,11 +196,11 @@ BetterDiscord.prototype.ipcAsyncMessage = function(event, arg) {
 			'specialparser': 1
 		},
 		'load-emoteData-ffz': {
+			'number': 8,
 			'type': 'emotedata',
 			'resource': 'FrankerFaceZ Emotedata',
 			'domain': _updater.CDN,
-			'url': '/' + _repo + '/BetterDiscordApp/' + _hash + '/data/emotedata_ffz.json',
-			'localurl': null,
+			'url': '/' + _updater.REPO + '/BetterDiscordApp/' + _updater.HASH + '/data/emotedata_ffz.json',
 			'message': 'load-emoteData-bttv',
 			'cacheable': true,
 			'variable': 'emotesFfz',
@@ -359,11 +211,11 @@ BetterDiscord.prototype.ipcAsyncMessage = function(event, arg) {
 			'specialparser': 2
 		},
 		'load-emoteData-bttv': {
+			'number': 9,
 			'type': 'emotedata',
 			'resource': 'BTTV Emotedata',
 			'domain': 'api.betterttv.net',
 			'url': '/emotes',
-			'localurl': null,
 			'message': 'load-emoteData-bttv-2',
 			'cacheable': true,
 			'variable': 'emotesBTTV',
@@ -374,11 +226,11 @@ BetterDiscord.prototype.ipcAsyncMessage = function(event, arg) {
 			'specialparser': 3
 		},
 		'load-emoteData-bttv-2': {
+			'number': 10,
 			'type': 'emotedata',
 			'resource': 'BTTV Emotedata',
 			'domain': _updater.CDN,
-			'url': '/' + _repo + '/BetterDiscordApp/' + _hash + '/data/emotedata_bttv.json',
-			'localurl': null,
+			'url': '/' + _updater.REPO + '/BetterDiscordApp/' + _updater.HASH + '/data/emotedata_bttv.json',
 			'message': 'start-bd',
 			'cacheable': true,
 			'variable': 'emotesBTTV2',
@@ -390,56 +242,64 @@ BetterDiscord.prototype.ipcAsyncMessage = function(event, arg) {
 		}
 	};
 
-	if(loadUs.hasOwnProperty(arg)) {
-		loadCount++;
-		var loadMe = loadUs[arg];
+	loadUs.count = function () {
+	    var count = 0;
+	    for(var prop in this) {
+	        if(this.hasOwnProperty(prop) && this[prop].hasOwnProperty('number'))
+	            count++;
+	    }
+	    return count;
+	}
 
-		_utils.updateLoading("Loading Resources (" + loadMe.resource + ")", loadCount / libCount * 100, 100);
+	if(loadUs.hasOwnProperty(arg))
+		return {'count': loadUs.count(), 'task': loadUs[arg]};
+	return null;
+};
 
-		var url = loadMe.url;
-		if(_local && loadMe.localurl != null) {
-			url = loadMe.localurl;
-		}
+BetterDiscordLoader.prototype.IpcAsyncMessage = function(event, arg) {
+	var ipcTask = this.GetIPCNextEvent(arg);
+
+	if(ipcTask) {
+		var loadMe = ipcTask.task;
+		_utils.updateLoading("Loading Resources (" + loadMe.resource + ")", loadMe.number / ipcTask.count * 100, 100);
 
 		if(loadMe.type == 'javascript') {
-			_utils.injectJavaScriptSync(url, loadMe.message);
+			_utils.injectJavaScriptSync(loadMe.url, loadMe.message);
 		}else if(loadMe.type == 'css') {
-			_utils.injectStylesheetSync(url, loadMe.message);
+			_utils.injectStylesheetSync(loadMe.url, loadMe.message);
 		}else if(loadMe.type == 'json') {
-			_utils.download(loadMe.domain, loadMe.url, function(data) {
+			_utils.DownloadHTTPS(loadMe.domain, loadMe.url, function(data) {
 				_utils.execJs('var ' + loadMe.variable + ' = ' + data + ';');
 				_utils.sendIcpAsync(loadMe.message);
 			});
 		}else if(loadMe.type == 'emotedata') {
-
 			var exists = _fs.existsSync(loadMe.localpath);
 
 			if(exists && !_cacheExpired && loadMe.cacheable) {
 				_this.injectEmoteData(loadMe, _fs.readFileSync(loadMe.localpath, loadMe.encoding));
 			} else {
 				if(loadMe.https) {
-					_utils.download(loadMe.domain, loadMe.url, function(data) {
+					_utils.DownloadHTTPS(loadMe.domain, loadMe.url, function(data) {
 						var parsedEmoteData = _this.parseEmoteData(loadMe, data);
 						_this.saveEmoteData(loadMe, parsedEmoteData);
 						_this.injectEmoteData(loadMe, parsedEmoteData);
 					});
 
 				} else {
-					_utils.downloadHttp(loadMe.url, function(data) {
+					_utils.DownloadHTTP(loadMe.url, function(data) {
 						var parsedEmoteData = _this.parseEmoteData(loadMe, data);
-						_this.saveEmoteData(loadMe, parsedEmoteData);
+						if(parsedEmoteData > 10)
+							_this.saveEmoteData(loadMe, parsedEmoteData);
 						_this.injectEmoteData(loadMe, parsedEmoteData);
 					});
 				}
 			}
-
-
 		}
 	}
 
 	if(arg == "start-bd") {
 		_utils.updateLoading("Starting Up", 100, 100);
-		_utils.execJs('var mainCore = new Core(); mainCore.init();');
+		_utils.execJs('(function() { var mainCore = new Core(); mainCore.init();})();');
 
         //Remove loading node
         setTimeout(function() {
@@ -448,15 +308,18 @@ BetterDiscord.prototype.ipcAsyncMessage = function(event, arg) {
     }
 };
 
-BetterDiscord.prototype.parseEmoteData = function(loadMe, emoteData) {
+
+BetterDiscordLoader.prototype.parseEmoteData = function(loadMe, emoteData) {
 	var returnData = {};
-	_this.SecureTryCatch(function() {
+		
+	_utils.SecureTryCatch('BetterDiscordLoader->parseEmoteData(Transform emotes lists to files)', function() {
 		switch(loadMe.specialparser) {
 	        case 0: //Twitch Global Emotes
 	        	returnData = emoteData.replace(/\$/g, "\\$").replace(/'/g, "\\'").replace(/"/g, "\\\"");
 	        	break;
 	        case 1: //Twitch Subscriber Emotes
 		        emoteData = JSON.parse(emoteData);
+
 		        var channels = emoteData["channels"];
 		        for(var channel in channels) {
 		        	var emotes = channels[channel]["emotes"];
@@ -481,23 +344,21 @@ BetterDiscord.prototype.parseEmoteData = function(loadMe, emoteData) {
 
 	        		returnData[code] = url;
 	        	}
-		        
-		        returnData = JSON.stringify(returnData);
+	        	returnData = JSON.stringify(returnData);
 		        break;
 	        case 4: 
 		        returnData = emoteData;
 		        break;
-
 	    }
     });
     return returnData;
 };
 
-BetterDiscord.prototype.saveEmoteData = function(loadMe, emoteData) {
+BetterDiscordLoader.prototype.saveEmoteData = function(loadMe, emoteData) {
 	_fs.writeFileSync(loadMe.localpath, emoteData, loadMe.encoding);
 };
 
-BetterDiscord.prototype.injectEmoteData = function(loadMe, emoteData) {
+BetterDiscordLoader.prototype.injectEmoteData = function(loadMe, emoteData) {
 	if(loadMe.parse) {
 		_utils.execJs('var ' + loadMe.variable + ' = JSON.parse(\'' + emoteData + '\');');
 	} else {
@@ -507,4 +368,4 @@ BetterDiscord.prototype.injectEmoteData = function(loadMe, emoteData) {
 	_utils.sendIcpAsync(loadMe.message);
 };
 
-exports.BetterDiscord = BetterDiscord;
+exports.BetterDiscordLoader = BetterDiscordLoader;
