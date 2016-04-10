@@ -123,9 +123,7 @@ BetterDiscordBoot.prototype.DispatchEvents = function() {
 
 	if(_self.EventTriggered("boot")) {
 		_utils.SecureTryCatch('Booting BetterDiscord', function() {
-			_utils.jsLog('boot');
 			if(_utils.FileExists(_BDLoaderPath)) {
-				_utils.jsLog('done');
 				var BD = require(_BDLoaderPath);
 				_this = new BD.BetterDiscordLoader(_self, _ipc, _utils);
 				_this.Init();
