@@ -1,2 +1,0 @@
-var _betterDiscordLib = require('betterdiscord');
-_betterDiscordLib.BetterDiscord(mainWindow);
