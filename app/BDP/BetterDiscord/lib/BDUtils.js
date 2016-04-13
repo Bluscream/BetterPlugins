@@ -13,9 +13,15 @@ var _fs = require('fs');
 var eol = require('os').EOL;
 var logs = "";
 
+var _instance;
 var _mainWindow;
 var Utils = function(mainWindow) {
     _mainWindow = mainWindow;
+    _instance = this;
+};
+
+Utils.prototype.GetWebWindow = function() {
+    return _mainWindow;
 };
 
 String.prototype.replaceAll = function(search, replacement) {
@@ -24,8 +30,8 @@ String.prototype.replaceAll = function(search, replacement) {
 
 Utils.prototype.MyDump = function(arr, level) {
     var dumped_text = "";
-    if(level > 3) return dumped_text;
     if(!level) level = 0;
+    if(level > 3) return dumped_text;
 
     var level_padding = "";
     for(var j=0;j<level+1;j++) level_padding += "    ";
@@ -36,7 +42,7 @@ Utils.prototype.MyDump = function(arr, level) {
 
             if(typeof(value) == 'object') { 
                 dumped_text += level_padding + "'" + item + "' ...\n";
-                dumped_text += mydump(value,level+1);
+                dumped_text += _instance.MyDump(value,level+1);
             } else {
                 dumped_text += level_padding + "'" + item + "' => \"" + value + "\"\n";
             }
@@ -90,6 +96,19 @@ Utils.prototype.FileExists = function(filePath) {
 Utils.prototype.LoadDir = function(path, callback) {
     var files = _fs.readdirSync(path);
     if(files) files.forEach(callback);
+};
+
+Utils.prototype.LoadFile = function(filePath, encoding) {
+    encoding = encoding || 'utf8';
+    return _fs.readFileSync(filePath, encoding);   
+};
+
+Utils.prototype.LoadFileBase64 = function(filePath) {
+    return new Buffer(_fs.readFileSync(filePath)).toString('base64');   
+};
+
+Utils.prototype.WriteFile = function(filePath, data, encoding) {
+    _fs.writeFileSync(filePath, data, encoding);
 };
 
 Utils.prototype.CheckCacheFile = function(path, timeHours) {
@@ -161,7 +180,7 @@ Utils.prototype.DownloadHTTP = function(url, callback) {
 }
 
 Utils.prototype.sendIcpAsync = function(message) {
-    this.execJs('betterDiscordIPC.send("asynchronous-message", "'+message+'");');
+    this.execJs('betterDiscordIPC.send("async-message-boot", "'+message+'");');
 }
 
 //Js logger
@@ -228,7 +247,7 @@ Utils.prototype.injectJavaScriptSync = function(loadMe) {
         script.id="'+loadMe.elemId+'"; \
         script.type = "text/javascript"; \
         script.onload = function() { \
-            betterDiscordIPC.send("asynchronous-message", "'+loadMe.message+'"); \
+            betterDiscordIPC.send("async-message-boot", "'+loadMe.message+'"); \
         }; \
         document.getElementsByTagName("body")[0].appendChild(script); \
         script.src = "'+loadMe.url+'"; \

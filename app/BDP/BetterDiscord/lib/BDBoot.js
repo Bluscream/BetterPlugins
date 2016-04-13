@@ -12,22 +12,21 @@ var _fs = require("fs");
 
 
 var _BDLoaderPath = __dirname + '/BDLoader.js';
-var _BDUtilsPath = __dirname + '/Utils.js';
-var _BDUConfigPath = __dirname + '/config.json';
-var _BDUCachePath = __dirname + '/update.json';
+var _BDUtilsPath = __dirname + '/BDUtils.js';
+var _BDUpdaterPath = __dirname + '/../updater.json';
+var _BDUCachePath = __dirname + '/update_cache.json';
 
-var _config = require(_BDUConfigPath);
+var _updater = require(_BDUpdaterPath);
 var _utilities = require(_BDUtilsPath);
 
 var _self, _this;
 var _utils, _mainWindow, _cacheExpired = true;
 
-var _updater = {
+var _old_updater = {
 	'CDN': '',
 	'REPO': 'Jiiks',
 	'HASH': '',
-	'VER': '',
-	'CACHE': ''
+	'VER': ''
 };
 
 function BetterDiscord(mainWindow) {
@@ -44,7 +43,7 @@ function BetterDiscord(mainWindow) {
 BetterDiscord.instance = null;
 
 var BetterDiscordBoot = function() {
-	this.version = _config.Core.Version;
+	this.updater = _updater;
 	this.BootStrapStart();
 };
 
@@ -57,7 +56,7 @@ BetterDiscordBoot.prototype.BDStartUp = false;
 BetterDiscordBoot.prototype.BDReBoot = false;
 
 BetterDiscordBoot.prototype.BootStrapStart = function() {
-	_ipc.on('asynchronous-message', function(event, arg) { _self.IpcAsyncMessage(event, arg); });
+	_ipc.on('async-message-boot', function(event, arg) { _self.IpcAsyncMessage(event, arg); });
 
 	this.bootInterval = setInterval(this.HotLoadCheck, 2000);
 	this.eventInterval = setInterval(this.DispatchEvents, 1000);
@@ -78,6 +77,10 @@ BetterDiscordBoot.prototype.HandleEvents = function () {
 	_mainWindow.on("close", function() { _self.RecordEvent("close"); });
 };
 
+BetterDiscordBoot.prototype.SendWebEvent = function(event, arg) {
+	return _mainWindow.webContents.send(event, arg);
+};
+
 BetterDiscordBoot.prototype.EventTriggered = function (event) {
 	if(_self.eventPoll.hasOwnProperty(event) && 
 		_self.eventPoll[event] > 0) {
@@ -91,12 +94,12 @@ BetterDiscordBoot.prototype.HotLoadCheck = function() {
 	if(_cacheExpired) {
 		_utils.jsLog('Checking for updates ...');
 		_self.CheckVersion(function() {
-			if(_self.version !== _updater.VER) {
-				_utils.jsLog('New version '+ _updater.VER + ' > ' + _self.version);
+			if(_self.updater.version < _updater.version) {
+				_utils.jsLog('New version '+ _updater.version + ' > ' + _self.updater.version);
 				_utils.jsLog('Updating ...');
 
-				// DOWNLOAD HERE THE NEW VERSION 
-				_self.version = _updater.VER;
+				_self.Update();
+				_mainWindow.reload();
 			}
 		});
 	}else {
@@ -117,7 +120,7 @@ BetterDiscordBoot.prototype.HotLoadCheck = function() {
 BetterDiscordBoot.prototype.DispatchEvents = function() {
 	if(_self.BDStartUp && _self.EventTriggered("dom-ready")) {
 		_utils.SecureTryCatch('BetterDiscordBoot->DispatchEvents(Loader->Load())', function() {
-			_this.Load(_updater);
+			_this.Load(_old_updater);
 		});
 	}
 
@@ -135,25 +138,25 @@ BetterDiscordBoot.prototype.DispatchEvents = function() {
 	if(_self.EventTriggered("reboot")) {
 		_utils.SecureTryCatch('Booting BetterDiscord rebooting', function() {
 			if(_utils.FileExists(_BDUtilsPath)) {
-				_self.RemoveIncludes(_BDUtilsPath);
+				_self.RemoveInclude(_BDUtilsPath);
 
 				_utils = require(_BDUtilsPath);
 				_utils = new _utils.Utils(_mainWindow);
 			}
 
 			if(_utils.FileExists(_BDLoaderPath)) {
-				_self.RemoveIncludes(_BDLoaderPath);
+				_self.RemoveInclude(_BDLoaderPath);
 
 				var BD = require(_BDLoaderPath);
 				_this = new BD.BetterDiscordLoader(_self, _ipc, _utils);
 				_this.Init();
-				_this.Load(_updater);
+				_this.Load(_old_updater);
 			}
 		});
 	}
 };
 
-BetterDiscordBoot.prototype.RemoveIncludes = function(libPath) {
+BetterDiscordBoot.prototype.RemoveInclude = function(libPath) {
 	var name = require.resolve(libPath);
 	if(require.cache.hasOwnProperty(name))
 		delete require.cache[name];
@@ -174,12 +177,12 @@ BetterDiscordBoot.prototype.IpcAsyncMessage = function(event, arg) {
 
 BetterDiscordBoot.prototype.CheckVersion = function(callback) {
 	var repoAPIHost = "api.github.com";
-	var repoAPIPathHash = "/repos/" + _updater.REPO + "/BetterDiscordApp/commits/master";
+	var repoAPIPathHash = "/repos/" + _old_updater.REPO + "/BetterDiscordApp/commits/master";
 	_utils.DownloadHTTPS(repoAPIHost, repoAPIPathHash, function(data) {
 		_utils.SecureTryCatch('BetterDiscordLoader->CheckVersion(Get version hash)', function() {
 			var tmpRawObj = JSON.parse(data);
 			if(tmpRawObj.hasOwnProperty('sha')) {
-				_updater.HASH = tmpRawObj.sha;
+				_old_updater.HASH = tmpRawObj.sha;
 				_self.CheckUpdater(callback);
 			}
 		});
@@ -188,17 +191,35 @@ BetterDiscordBoot.prototype.CheckVersion = function(callback) {
 
 BetterDiscordBoot.prototype.CheckUpdater = function(callback) {
 	var repoRAWHost = "raw.githubusercontent.com";
-	var repoRAWPathUpdater = "/" + _updater.REPO + "/BetterDiscordApp/" + _updater.HASH + "/data/updater.json";
+	var repoRAWPathUpdater = "/"+_old_updater.REPO+"/BetterDiscordApp/"+_old_updater.HASH+"/data/updater.json";
 	_utils.DownloadHTTPS(repoRAWHost, repoRAWPathUpdater, function(data) {
 		_utils.SecureTryCatch('BetterDiscordLoader->CheckVersion(Get update info)', function() {
 			var tmpRawObj = JSON.parse(data);
 			if(tmpRawObj.hasOwnProperty('CDN')) {
-				_updater.CDN = tmpRawObj.CDN;
-				_updater.VER = tmpRawObj.LatestVersion;
+				_old_updater.CDN = tmpRawObj.CDN;
+				_old_updater.VER = tmpRawObj.LatestVersion;
+				_self.CheckBootUpdater(callback);
+			}
+		});
+	});
+};
+
+BetterDiscordBoot.prototype.CheckBootUpdater = function(callback) {
+	var repoRAWHost = "raw.githubusercontent.com";
+	var repoRAWPathUpdater = "/"+_updater.REPO+"/BetterPlugins/master/app/BDP/BetterDiscord/updater.json";
+	_utils.DownloadHTTPS(repoRAWHost, repoRAWPathUpdater, function(data) {
+		_utils.SecureTryCatch('BetterDiscordLoader->CheckBootUpdater(Get update info)', function() {
+			var tmpRawObj = JSON.parse(data);
+			if(tmpRawObj.hasOwnProperty('repo')) {
+				_updater = tmpRawObj;
 				callback();
 			}
 		});
 	});
+};
+
+BetterDiscordBoot.prototype.Update = function() {
+	this.updater = _updater;
 };
 
 exports.BetterDiscord = BetterDiscord;

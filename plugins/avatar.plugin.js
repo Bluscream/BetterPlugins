@@ -324,3 +324,5 @@ AvatarHover.prototype.getPanel = function() {
         '	});'+
         '});</script>';
 };
+
+exports.AvatarHover = AvatarHover;
