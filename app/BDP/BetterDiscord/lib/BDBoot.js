@@ -236,7 +236,7 @@ BetterDiscordBoot.prototype.Update = function() {
 
 	taskManager.RunTasks(function(successful) {
 		if(successful) {
-			this.updater = _updater;
+			_self.updater = _updater;
 			_mainWindow.reload();
 		}else
 			_utils.jsLog('One of the tasks failed, trying to update next hour ...');
