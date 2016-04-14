@@ -7,7 +7,7 @@
  */
 'use strict';
 
-var _ipc = require('electron').ipcMain;
+var _ipcMain = require('electron').ipcMain;
 var _fs = require("fs");
 
 
@@ -36,6 +36,8 @@ function BetterDiscord(mainWindow) {
 		BetterDiscord.instance = new BetterDiscordBoot();
 	
 	_self = BetterDiscord.instance;
+	_self.RegisterMainProcessListeners();
+
 	_utils = new _utilities.Utils(_self);
 };
 
@@ -55,7 +57,7 @@ BetterDiscordBoot.prototype.BDStartUp = false;
 BetterDiscordBoot.prototype.BDReBoot = false;
 
 BetterDiscordBoot.prototype.BootStrapStart = function() {
-	this.RegisterMainProcessListeners();
+	_ipcMain.on('async-message-boot', function(event, arg) { _self.IpcAsyncMessage(event, arg); });
 
 	this.bootInterval = setInterval(this.HotLoadCheck, 2000);
 	this.eventInterval = setInterval(this.DispatchEvents, 1000);
@@ -113,7 +115,7 @@ BetterDiscordBoot.prototype.DispatchEvents = function() {
 		_utils.SecureTryCatch('Booting BetterDiscord', function() {
 			if(_utils.FileExists(_BDLoaderPath)) {
 				var BD = require(_BDLoaderPath);
-				_BDLoader = new BD.BetterDiscordLoader(_self, _ipc, _utils);
+				_BDLoader = new BD.BetterDiscordLoader(_self, _utils);
 				_BDLoader.Init();
 				_self.BDStartUp = true;
 			}
@@ -133,7 +135,7 @@ BetterDiscordBoot.prototype.DispatchEvents = function() {
 				_self.RemoveInclude(_BDLoaderPath);
 
 				var BD = require(_BDLoaderPath);
-				_BDLoader = new BD.BetterDiscordLoader(_self, _ipc, _utils);
+				_BDLoader = new BD.BetterDiscordLoader(_self, _utils);
 				_BDLoader.Init();
 				_BDLoader.Load(_old_updater);
 			}
@@ -238,8 +240,6 @@ BetterDiscordBoot.prototype.SendWebEvent = function(event, arg) {
 };
 
 BetterDiscordBoot.prototype.RegisterMainProcessListeners = function() {
-	_ipc.on('async-message-boot', function(event, arg) { _self.IpcAsyncMessage(event, arg); });
-
 	_mainWindow.webContents.on("dom-ready", function() { _self.RecordEvent("dom-ready"); });
 	_mainWindow.webContents.on("new-window", function() { _self.RecordEvent("new-window"); });
 	_mainWindow.webContents.on("did-fail-load", function() { _self.RecordEvent("did-fail-load"); });

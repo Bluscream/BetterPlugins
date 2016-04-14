@@ -28,9 +28,8 @@ var _eCacheFile = _dataPath + "/emotes.json";
 var _pluginsPath = _dataPath + "/plugins";
 var _themesPath = _dataPath + "/themes";
 
-var _self, _this, _ipc, _utils;
-var BetterDiscordLoader = function (self, ipc, utils) {
-	_ipc = ipc;
+var _self, _this, _utils;
+var BetterDiscordLoader = function (self, utils) {
 	_self = self;
 	_utils = utils;
 	_this = this;
