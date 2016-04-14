@@ -211,6 +211,7 @@ Utils.prototype.CreateTask = function(action, source, dest) {
     this.SetAnswer = function(answer) {
         _selfTask.answer = answer;
         _selfTask.ResolveTask();
+        _instance.jsLog('Task finished ' + dest);
         _selfTask.finished = true;
     };
 
@@ -243,8 +244,10 @@ Utils.prototype.TaskManager = function() {
         if(_selfManager.tasks.length > 0) {
             var task = _selfManager.tasks[0];
 
-            if(task.finished)
+            if(task.finished) {
                 _selfManager.tasks.splice(0, 1);
+                _instance.jsUtils('remove one task');
+            }
 
             setTimeout(_selfManager.RunTasks, 5000, callback);
         }else
