@@ -31,13 +31,12 @@ var _old_updater = {
 
 function BetterDiscord(mainWindow) {
 	_mainWindow = mainWindow;
-	_utils = new _utilities.Utils(mainWindow);
 
 	if(!BetterDiscord.instance)
 		BetterDiscord.instance = new BetterDiscordBoot();
 	
 	_self = BetterDiscord.instance;
-    _self.HandleEvents();
+	_utils = new _utilities.Utils(_self);
 };
 
 BetterDiscord.instance = null;
@@ -56,7 +55,7 @@ BetterDiscordBoot.prototype.BDStartUp = false;
 BetterDiscordBoot.prototype.BDReBoot = false;
 
 BetterDiscordBoot.prototype.BootStrapStart = function() {
-	_ipc.on('async-message-boot', function(event, arg) { _self.IpcAsyncMessage(event, arg); });
+	this.SetupListeners();
 
 	this.bootInterval = setInterval(this.HotLoadCheck, 2000);
 	this.eventInterval = setInterval(this.DispatchEvents, 1000);
@@ -65,20 +64,6 @@ BetterDiscordBoot.prototype.BootStrapStart = function() {
 BetterDiscordBoot.prototype.BootStrapStop = function() {
 	clearInterval(this.bootInterval);
 	clearInterval(this.eventInterval);
-};
-
-BetterDiscordBoot.prototype.HandleEvents = function () {
-	_mainWindow.webContents.on("dom-ready", function() { _self.RecordEvent("dom-ready"); });
-	_mainWindow.webContents.on("new-window", function() { _self.RecordEvent("new-window"); });
-	_mainWindow.webContents.on("did-fail-load", function() { _self.RecordEvent("did-fail-load"); });
-	_mainWindow.webContents.on("crashed", function() { _self.RecordEvent("crashed"); });
-	_mainWindow.on("focus", function() { _self.RecordEvent("focus"); });
-	_mainWindow.on("blur", function() { _self.RecordEvent("blur"); });
-	_mainWindow.on("close", function() { _self.RecordEvent("close"); });
-};
-
-BetterDiscordBoot.prototype.SendWebEvent = function(event, arg) {
-	return _mainWindow.webContents.send(event, arg);
 };
 
 BetterDiscordBoot.prototype.EventTriggered = function (event) {
@@ -92,11 +77,11 @@ BetterDiscordBoot.prototype.EventTriggered = function (event) {
 
 BetterDiscordBoot.prototype.HotLoadCheck = function() {
 	if(_cacheExpired) {
-		_utils.jsLog('Checking for updates ...');
+		_self.JsLog('Checking for updates ...');
 		_self.CheckVersion(function() {
 			if(_self.updater.version < _updater.version) {
-				_utils.jsLog('New version '+ _updater.version + ' > ' + _self.updater.version);
-				_utils.jsLog('Updating ...');
+				_self.JsLog('New version '+ _updater.version + ' > ' + _self.updater.version);
+				_self.JsLog('Updating ...');
 
 				_self.Update();
 			}
@@ -140,7 +125,7 @@ BetterDiscordBoot.prototype.DispatchEvents = function() {
 				_self.RemoveInclude(_BDUtilsPath);
 
 				_utils = require(_BDUtilsPath);
-				_utils = new _utils.Utils(_mainWindow);
+				_utils = new _utils.Utils(_self);
 			}
 
 			if(_utils.FileExists(_BDLoaderPath)) {
@@ -236,13 +221,60 @@ BetterDiscordBoot.prototype.Update = function() {
 
 	taskManager.RunTasks(function(successful) {
 		if(successful) {
-			_self.updater = _updater;
+			this.updater = _updater;
 			_mainWindow.reload();
 		}else
-			_utils.jsLog('One of the tasks failed, trying to update next hour ...');
+			_self.JsLog('One of the tasks failed, trying to update next hour ...');
 	});
+};
 
+BetterDiscordBoot.prototype.ExecJS = function(jsData) {
+	_mainWindow.webContents.executeJavaScript(jsData);
+};
 
+BetterDiscordBoot.prototype.SendWebEvent = function(event, arg) {
+	return _mainWindow.webContents.send(event, arg);
+};
+
+BetterDiscordBoot.prototype.SetupListeners = function() {
+	this.ExecJS("var betterDiscordIPC = require('electron').ipcRenderer;");
+	this.ExecJS("betterDiscordIPC.on('async-message-log', function(event, msgObj){ \
+	switch(msgObj.type) { \
+		case 'error' : console.error(msgObj.message); break; \
+		case 'warn' : console.warn(msgObj.message); break; \
+		default: console.log(msgObj.message); break; \
+	}  });");
+
+	this.ExecJS("betterDiscordIPC.on('async-message-loadJS', function(event, libPath) { \
+ 		var name = require.resolve(libPath);  \
+		if(require.cache.hasOwnProperty(name)) delete require.cache[name]; \
+		var pluginInclude = require(libPath); \
+		var libEntries = Object.keys(pluginInclude); \
+		if(libEntries.length > 0 && typeof libEntries[0] == 'string') { \
+			try { \
+				var pluginInst = new pluginInclude[libEntries[0]](); \
+				pluginInst.unload(); \
+		 		bdplugins[pluginInst.getName()] = {'plugin': pluginInst, 'enabled': false}; \
+	 		}catch(ex) { console.error('['+libPath+'] '+ ex)}\
+	 	}  }); ");
+
+ 	this.ExecJS("betterDiscordIPC.on('async-message-loadCSS', function(event, styleObj) { \
+ 			bdthemes[styleObj.name] = styleObj; \
+	}); ");
+
+	_ipc.on('async-message-boot', function(event, arg) { _self.IpcAsyncMessage(event, arg); });
+
+	_mainWindow.webContents.on("dom-ready", function() { _self.RecordEvent("dom-ready"); });
+	_mainWindow.webContents.on("new-window", function() { _self.RecordEvent("new-window"); });
+	_mainWindow.webContents.on("did-fail-load", function() { _self.RecordEvent("did-fail-load"); });
+	_mainWindow.webContents.on("crashed", function() { _self.RecordEvent("crashed"); });
+	_mainWindow.on("focus", function() { _self.RecordEvent("focus"); });
+	_mainWindow.on("blur", function() { _self.RecordEvent("blur"); });
+	_mainWindow.on("close", function() { _self.RecordEvent("close"); });
+};
+
+BetterDiscordBoot.prototype.JsLog = function(message, type) {
+    this.SendWebEvent('async-message-log', {'type': type, 'message': message});
 };
 
 exports.BetterDiscord = BetterDiscord;

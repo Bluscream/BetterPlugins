@@ -13,15 +13,10 @@ var _fs = require('fs');
 var eol = require('os').EOL;
 var logs = "";
 
-var _instance;
-var _mainWindow;
-var Utils = function(mainWindow) {
-    _mainWindow = mainWindow;
-    _instance = this;
-};
-
-Utils.prototype.GetWebWindow = function() {
-    return _mainWindow;
+var _self, _this;
+var Utils = function(self) {
+    _self = self;
+    _this = this;
 };
 
 String.prototype.replaceAll = function(search, replacement) {
@@ -42,7 +37,7 @@ Utils.prototype.MyDump = function(arr, level) {
 
             if(typeof(value) == 'object') { 
                 dumped_text += level_padding + "'" + item + "' ...\n";
-                dumped_text += _instance.MyDump(value,level+1);
+                dumped_text += _this.MyDump(value,level+1);
             } else {
                 dumped_text += level_padding + "'" + item + "' => \"" + value + "\"\n";
             }
@@ -58,8 +53,8 @@ Utils.prototype.SecureTryCatch = function(message, callback, silent) {
         return callback() || false;
     }catch(ex) {
         if(!silent) {
-            this.jsLog('SecureTryCatch: ' + message);
-            this.jsLog('SecureTryCatch: ' + ex, 'error');
+            _self.JsLog('SecureTryCatch: ' + message);
+            _self.JsLog('SecureTryCatch: ' + ex, 'error');
         }
     }
     return false;
@@ -199,10 +194,10 @@ Utils.prototype.CreateTask = function(action, source, dest) {
             case 'ReplaceFile': {
                 if(source === '__answer__') {
                     if(this.answer)
-                        _instance.WriteFile(dest, this.answer, 'utf8');
+                        _this.WriteFile(dest, this.answer, 'utf8');
                 }else {
-                    if(_instance.FileExists(source)) {
-                        _instance.WritFile(dest, _instance.LoadFile(source))
+                    if(_this.FileExists(source)) {
+                        _this.WritFile(dest, _this.LoadFile(source))
                     }
                 }
             } 
@@ -221,14 +216,14 @@ Utils.prototype.TaskManager = function() {
     var _selfManager = this;
     this.RunTasks = function (callback) {
         if(_selfManager.tasks.length > 0 && !_selfManager.abort) {
-            _instance.jsLog('Checking Task');
+            _self.JsLog('Checking Task');
             var task = _selfManager.tasks[0];
 
             if(task.finished) {
                 _selfManager.tasks.splice(0, 1);
                 if(!task.answer) {
                     _selfManager.abort = true;
-                    _instance.jsLog(_selfManager.error);
+                    _self.JsLog(_selfManager.error);
                 }
             }
 
@@ -239,52 +234,17 @@ Utils.prototype.TaskManager = function() {
 };
 
 Utils.prototype.sendIcpAsync = function(message) {
-    this.execJs('betterDiscordIPC.send("async-message-boot", "'+message+'");');
+    _self.ExecJS('betterDiscordIPC.send("async-message-boot", "'+message+'");');
 }
-
-//Js logger
-Utils.prototype.jsLog = function(message, type) {
-    type = type || 'log';
-
-    message = String(message).replaceAll('"', '`');
-    message = String(message).replaceAll('\\\\', '|');
-
-    switch(type) {
-        case "log":
-            this.execJs('console.log("BetterDiscord: ' + message + '");');
-            break;
-        case "warn":
-            this.execJs('console.warn("BetterDiscord: ' + message + '");');
-            break;
-        case "error":
-            this.execJs('console.error("BetterDiscord: ' + message + '");');
-            break;
-    }
-};
 
 Utils.prototype.updateLoading = function(message, cur, max) {
-    this.execJs('document.getElementById("bd-status").innerHTML = "BetterDiscord - '+message+' : ";');
-    this.execJs('document.getElementById("bd-pbar").value = '+cur+';');
-    this.execJs('document.getElementById("bd-pbar").max = '+max+';');
-}
-
-//Logger
-Utils.prototype.log = function(message) {
-    console.log("BetterDiscord: " + message);
-    logs += message + eol;
-}
-
-Utils.prototype.saveLogs = function(path) {
-    _fs.writeFileSync(path + "/logs.log", logs);
-}
-
-//Execute javascript
-Utils.prototype.execJs = function(js) {
-    _mainWindow.webContents.executeJavaScript(js);
+    _self.ExecJS('document.getElementById("bd-status").innerHTML = "BetterDiscord - '+message+' : ";');
+    _self.ExecJS('document.getElementById("bd-pbar").value = '+cur+';');
+    _self.ExecJS('document.getElementById("bd-pbar").max = '+max+';');
 }
 
 Utils.prototype.injectStylesheetSync = function(loadMe) {
-    this.execJs('(function() {\
+    _self.ExecJS('(function() {\
         var e = document.getElementById("'+loadMe.elemId+'");\
         if(e) e.parentNode.removeChild(e); \
         var stylesheet = document.createElement("link"); \
@@ -299,7 +259,7 @@ Utils.prototype.injectStylesheetSync = function(loadMe) {
 };
 
 Utils.prototype.injectJavaScriptSync = function(loadMe) {
-    this.execJs(' (function() {\
+    _self.ExecJS(' (function() {\
         var e = document.getElementById("'+loadMe.elemId+'"); \
         if(e) e.parentNode.removeChild(e); \
         var script = document.createElement("script"); \

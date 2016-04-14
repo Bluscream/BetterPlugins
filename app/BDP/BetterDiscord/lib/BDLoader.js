@@ -46,35 +46,14 @@ BetterDiscordLoader.prototype.Load = function(updaterData) {
 	_updater = updaterData;
 	_cacheExpired = _utils.CheckCacheFile(_eCacheFile, 24);
 
-	_utils.execJs('var themesupport2 = true');
-	_utils.execJs('var bdplugins = {};');
-	_utils.execJs('var bdthemes = {};');
-    _utils.execJs('var version = "'+ _self.version + '"');
+	_self.ExecJS('var themesupport2 = true');
+	_self.ExecJS('var bdplugins = {};');
+	_self.ExecJS('var bdthemes = {};');
+    _self.ExecJS('var version = "'+ _self.version + '"');
 
- 	_utils.execJs("var betterDiscordIPC = require('electron').ipcRenderer;");
- 	_utils.execJs("if(betterDiscordIPC.listenerCount('async-message-main') == 0) \
- 		betterDiscordIPC.on('async-message-main', function(event, arg) { console.log(arg); }); ");
- 	_utils.execJs("if(betterDiscordIPC.listenerCount('async-message-loadJS') == 0) \
- 		betterDiscordIPC.on('async-message-loadJS', function(event, libPath) { \
- 		var name = require.resolve(libPath);  \
-		if(require.cache.hasOwnProperty(name)) delete require.cache[name]; \
-		var pluginInclude = require(libPath); \
-		var libEntries = Object.keys(pluginInclude); \
-		if(libEntries.length > 0 && typeof libEntries[0] == 'function') { \
-			try {\
-				var pluginInst = new pluginInclude[libEntries[0]](); \
-				pluginInst.unload(); \
-		 		bdplugins[pluginInst.getName()] = {'plugin': pluginInst, 'enabled': false}; \
-	 		}catch(ex) { console.error('['+libPath+'] '+ ex)}\
-	 	}  }); ");
- 	_utils.execJs("if(betterDiscordIPC.listenerCount('async-message-loadCSS') == 0) \
- 		betterDiscordIPC.on('async-message-loadCSS', function(event, styleObj) { \
- 			bdthemes[styleObj.name] = styleObj; \
-		}); ");
-
-	_utils.execJs('var e = document.getElementById("BDSTATUS"); if(e) e.parentNode.removeChild(e); var loadingNode = document.createElement("DIV"); loadingNode.id="BDSTATUS";');
-	_utils.execJs('loadingNode.innerHTML = \' <div style="height:20px;width:100%;background:#282B30;"><div style="padding-right:10px; float:right"> <span id="bd-status" style="line-height:20px;color:#E8E8E8;">BetterDiscord - Loading Libraries : </span><progress id="bd-pbar" value="0" max="100"></progress></div></div> \'');
-	_utils.execJs('var flex = document.getElementsByClassName("flex-vertical flex-spacer")[0]; flex.appendChild(loadingNode);');
+	_self.ExecJS('var e = document.getElementById("BDSTATUS"); if(e) e.parentNode.removeChild(e); var loadingNode = document.createElement("DIV"); loadingNode.id="BDSTATUS";');
+	_self.ExecJS('loadingNode.innerHTML = \' <div style="height:20px;width:100%;background:#282B30;"><div style="padding-right:10px; float:right"> <span id="bd-status" style="line-height:20px;color:#E8E8E8;">BetterDiscord - Loading Libraries : </span><progress id="bd-pbar" value="0" max="100"></progress></div></div> \'');
+	_self.ExecJS('var flex = document.getElementsByClassName("flex-vertical flex-spacer")[0]; flex.appendChild(loadingNode);');
 
 	this.IPCAsyncMessageInit();
 };
@@ -323,7 +302,7 @@ BetterDiscordLoader.prototype.IpcAsyncMessage = function(event, arg) {
 			_utils.injectStylesheetSync(loadMe);
 		}else if(loadMe.type == 'json') {
 			_utils.DownloadHTTPS(loadMe.domain, loadMe.url, function(data) {
-				_utils.execJs('var ' + loadMe.variable + ' = ' + data + ';');
+				_self.ExecJS('var ' + loadMe.variable + ' = ' + data + ';');
 				_utils.sendIcpAsync(loadMe.message);
 			});
 		}else if(loadMe.type == 'emotedata') {
@@ -352,8 +331,8 @@ BetterDiscordLoader.prototype.IpcAsyncMessage = function(event, arg) {
 
 	if(arg == "start-bd") {
 		_utils.updateLoading("Starting Up", 100, 100);
-		_utils.execJs('var mainCore = new Core(); mainCore.init();');
-		_utils.execJs('$("#BDSTATUS").remove();');
+		_self.ExecJS('var mainCore = new Core(); mainCore.init();');
+		_self.ExecJS('$("#BDSTATUS").remove();');
     }
 };
 
@@ -418,7 +397,7 @@ BetterDiscordLoader.prototype.saveEmoteData = function(loadMe, emoteData) {
 };
 
 BetterDiscordLoader.prototype.injectEmoteData = function(loadMe, emoteData) {
-	_utils.execJs('var ' + loadMe.variable + ' = ' + emoteData + ';');
+	_self.ExecJS('var ' + loadMe.variable + ' = ' + emoteData + ';');
 	_utils.sendIcpAsync(loadMe.message);
 };
 
