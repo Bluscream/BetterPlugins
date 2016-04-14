@@ -124,8 +124,8 @@ BetterDiscordBoot.prototype.DispatchEvents = function() {
 			if(_utils.FileExists(_BDUtilsPath)) {
 				_self.RemoveInclude(_BDUtilsPath);
 
-				_utils = require(_BDUtilsPath);
-				_utils = new _utils.Utils(_self);
+				_utilities = require(_BDUtilsPath);
+				_utils = new _utilities.Utils(_self);
 			}
 
 			if(_utils.FileExists(_BDLoaderPath)) {
@@ -221,7 +221,7 @@ BetterDiscordBoot.prototype.Update = function() {
 
 	taskManager.RunTasks(function(successful) {
 		if(successful) {
-			this.updater = _updater;
+			_self.updater = _updater;
 			_mainWindow.reload();
 		}else
 			_self.JsLog('One of the tasks failed, trying to update next hour ...');
