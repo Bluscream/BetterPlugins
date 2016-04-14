@@ -60,7 +60,7 @@ BetterDiscordLoader.prototype.Load = function(updaterData) {
 		if(require.cache.hasOwnProperty(name)) delete require.cache[name]; \
 		var pluginInclude = require(libPath); \
 		var libEntries = Object.keys(pluginInclude); \
-		if(libEntries.length > 0) { \
+		if(libEntries.length > 0 && typeof libEntries[0] == 'function') { \
 			try {\
 				var pluginInst = new pluginInclude[libEntries[0]](); \
 				pluginInst.unload(); \
@@ -353,7 +353,7 @@ BetterDiscordLoader.prototype.IpcAsyncMessage = function(event, arg) {
 	if(arg == "start-bd") {
 		_utils.updateLoading("Starting Up", 100, 100);
 		_utils.execJs('var mainCore = new Core(); mainCore.init();');
-		//_utils.execJs('$("#BDSTATUS").remove();');
+		_utils.execJs('$("#BDSTATUS").remove();');
     }
 };
 
