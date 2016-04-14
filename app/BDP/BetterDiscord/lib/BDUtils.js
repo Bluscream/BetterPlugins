@@ -246,7 +246,7 @@ Utils.prototype.TaskManager = function() {
 
             if(task.finished) {
                 _selfManager.tasks.splice(0, 1);
-                _instance.jsUtils('remove one task');
+                _instance.jsLog('Remove one task :' + JSON.stringify(task));
             }
 
             setTimeout(_selfManager.RunTasks, 5000, callback);
