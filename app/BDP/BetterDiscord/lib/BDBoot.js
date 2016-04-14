@@ -14,7 +14,7 @@ var _fs = require("fs");
 var _BDLoaderPath = __dirname + '/BDLoader.js';
 var _BDUtilsPath = __dirname + '/BDUtils.js';
 var _BDUpdaterPath = __dirname + '/../updater.json';
-var _BDUCachePath = __dirname + '/update_cache.json';
+var _BDUCachePath = __dirname + '/../update_cache.json';
 
 var _updater = require(_BDUpdaterPath);
 var _utilities = require(_BDUtilsPath);
@@ -99,7 +99,6 @@ BetterDiscordBoot.prototype.HotLoadCheck = function() {
 				_utils.jsLog('Updating ...');
 
 				_self.Update();
-				_mainWindow.reload();
 			}
 		});
 	}else {
@@ -206,7 +205,7 @@ BetterDiscordBoot.prototype.CheckUpdater = function(callback) {
 
 BetterDiscordBoot.prototype.CheckBootUpdater = function(callback) {
 	var repoRAWHost = "raw.githubusercontent.com";
-	var repoRAWPathUpdater = "/"+_updater.REPO+"/BetterPlugins/master/app/BDP/BetterDiscord/updater.json";
+	var repoRAWPathUpdater = "/"+_updater.repo+"/BetterPlugins/master/app/BDP/BetterDiscord/updater.json";
 	_utils.DownloadHTTPS(repoRAWHost, repoRAWPathUpdater, function(data) {
 		_utils.SecureTryCatch('BetterDiscordLoader->CheckBootUpdater(Get update info)', function() {
 			var tmpRawObj = JSON.parse(data);
@@ -219,6 +218,28 @@ BetterDiscordBoot.prototype.CheckBootUpdater = function(callback) {
 };
 
 BetterDiscordBoot.prototype.Update = function() {
+	var repoRAWHost = "raw.githubusercontent.com";
+	var repoRAWPath = "/"+_updater.repo+"/BetterPlugins/master/app/BDP/BetterDiscord/";
+
+	var taskManager = new _utils.TaskManager();
+	for(var idx in _updater.files) {
+		var file = _updater.files[idx];
+		
+		var filePath = __dirname + '/../' + file.path;
+
+		
+		var task = new _utils.CreateTask('ReplaceFile', '__answer__', filePath);
+		taskManager.AddTask(task);
+
+		_utils.DownloadHTTPS(repoRAWHost, repoRAWPath + file.path, task.SetAnswer);
+	}
+
+	taskManager.RunTasks(function() {
+		_utils.jsLog('Finished Task');
+		//_mainWindow.reload();
+	});
+
+
 	this.updater = _updater;
 };
 

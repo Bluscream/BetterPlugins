@@ -101,7 +101,7 @@ BetterDiscordLoader.prototype.LoadTheme = function(fileName) {
 	if(styleExt.length + styleExtPos !=  fileName.length) return;
 
 	_utils.SecureTryCatch('BetterDiscordLoader->loadPlugin', function() {
-		var theme = _utils.LoadFile(_themesPath +'/' + fileName);
+		var theme = _utils.LoadFile(_themesPath +'/' + fileName, 'utf8');
         var split = theme.split('\n');
 
         var meta = split[0];

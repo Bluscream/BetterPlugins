@@ -99,7 +99,6 @@ Utils.prototype.LoadDir = function(path, callback) {
 };
 
 Utils.prototype.LoadFile = function(filePath, encoding) {
-    encoding = encoding || 'utf8';
     return _fs.readFileSync(filePath, encoding);   
 };
 
@@ -163,6 +162,27 @@ Utils.prototype.DownloadHTTPS = function(host, path, callback) {
         callback(null);
     });
 }
+
+Utils.prototype.DownloadSyncHTTPS = function(host, path) {
+    var options = {
+        host: host,
+        path: path,
+        headers: {'user-agent': 'Mozilla/5.0'},
+    }
+
+    https.get(options, function(res) {
+        var data = "";
+        res.on('data', function(chunk) {
+            data += chunk;
+        });
+        res.on("end", function() {
+            callback(data);
+        });
+    }).on("error", function() {
+        callback(null);
+    });
+}
+
 //Download using http
 Utils.prototype.DownloadHTTP = function(url, callback) {
     http.get(url, function(result) {
@@ -178,6 +198,59 @@ Utils.prototype.DownloadHTTP = function(url, callback) {
         callback(null);
     });
 }
+
+Utils.prototype.CreateTask = function(action, source, dest) {
+    this.action = action;
+    this.source = source;
+    this.dest = dest;
+    this.finished = false;
+    this.answer = '';
+
+    var _selfTask = this;
+
+    this.SetAnswer = function(answer) {
+        _selfTask.answer = answer;
+        _selfTask.ResolveTask();
+        _selfTask.finished = true;
+    };
+
+    this.ResolveTask = function() {
+        switch(this.action) {
+            case 'ReplaceFile': {
+                if(source === '__answer__') {
+                    _instance.WriteFile(dest, this.answer, 'utf8');
+                }else {
+                    if(_instance.FileExists(source)) {
+                        _instance.WritFile(dest, _instance.LoadFile(source))
+                    }
+                }
+            } 
+        }
+    };
+};
+
+Utils.prototype.TaskManager = function() {
+    this.tasks = [];
+
+    this.AddTask = function(task) {
+        _instance.jsLog('AddTask');
+        this.tasks.push(task);
+    };
+
+    var _selfManager = this;
+    this.RunTasks = function (callback) {
+        _instance.jsLog('Checking Task');
+        if(_selfManager.tasks.length > 0) {
+            var task = _selfManager.tasks[0];
+
+            if(task.finished)
+                _selfManager.tasks.splice(0, 1);
+
+            setTimeout(_selfManager.RunTasks, 5000, callback);
+        }else
+            callback();
+    }
+};
 
 Utils.prototype.sendIcpAsync = function(message) {
     this.execJs('betterDiscordIPC.send("async-message-boot", "'+message+'");');
