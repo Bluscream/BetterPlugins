@@ -19,7 +19,7 @@ var _BDUCachePath = __dirname + '/../update_cache.json';
 var _updater = require(_BDUpdaterPath);
 var _utilities = require(_BDUtilsPath);
 
-var _self, _this;
+var _self, _BDLoader;
 var _utils, _mainWindow, _cacheExpired = true;
 
 var _old_updater = {
@@ -104,8 +104,8 @@ BetterDiscordBoot.prototype.HotLoadCheck = function() {
 BetterDiscordBoot.prototype.DispatchEvents = function() {
 	if(_self.BDStartUp && _self.EventTriggered("dom-ready")) {
 		_utils.SecureTryCatch('BetterDiscordBoot->DispatchEvents(Loader->Load())', function() {
-			_this.RegisterWebProcessListeners();
-			_this.Load(_old_updater);
+			_self.RegisterWebProcessListeners();
+			_BDLoader.Load(_old_updater);
 		});
 	}
 
@@ -113,8 +113,8 @@ BetterDiscordBoot.prototype.DispatchEvents = function() {
 		_utils.SecureTryCatch('Booting BetterDiscord', function() {
 			if(_utils.FileExists(_BDLoaderPath)) {
 				var BD = require(_BDLoaderPath);
-				_this = new BD.BetterDiscordLoader(_self, _ipc, _utils);
-				_this.Init();
+				_BDLoader = new BD.BetterDiscordLoader(_self, _ipc, _utils);
+				_BDLoader.Init();
 				_self.BDStartUp = true;
 			}
 		});
@@ -133,9 +133,9 @@ BetterDiscordBoot.prototype.DispatchEvents = function() {
 				_self.RemoveInclude(_BDLoaderPath);
 
 				var BD = require(_BDLoaderPath);
-				_this = new BD.BetterDiscordLoader(_self, _ipc, _utils);
-				_this.Init();
-				_this.Load(_old_updater);
+				_BDLoader = new BD.BetterDiscordLoader(_self, _ipc, _utils);
+				_BDLoader.Init();
+				_BDLoader.Load(_old_updater);
 			}
 		});
 	}
@@ -156,7 +156,7 @@ BetterDiscordBoot.prototype.RecordEvent = function(event) {
 
 BetterDiscordBoot.prototype.IpcAsyncMessage = function(event, arg) {
 	_utils.SecureTryCatch('BetterDiscordBoot->IpcAsyncMessage', function() {
-		_this.IpcAsyncMessage(event, arg);
+		_BDLoader.IpcAsyncMessage(event, arg);
 	});
 };
 

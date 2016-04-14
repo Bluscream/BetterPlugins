@@ -223,7 +223,7 @@ Utils.prototype.TaskManager = function() {
                 }
             }
 
-            setTimeout(_selfManager.RunTasks, 5000, callback);
+            setTimeout(_selfManager.RunTasks, 3000, callback);
         }else
             callback(!_selfManager.abort);
     }

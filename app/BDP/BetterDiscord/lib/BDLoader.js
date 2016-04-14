@@ -291,10 +291,10 @@ BetterDiscordLoader.prototype.IpcAsyncMessage = function(event, arg) {
 		_utils.updateLoading("Loading Resources (" + loadMe.resource + ")", loadMe.number / ipcTask.count * 100, 100);
 
 		if(loadMe.type == 'plugins') {
-			_utils.LoadDir(loadMe.localpath, _this.LoadPlugin);
+			_utils.LoadDir(loadMe.localpath, this.LoadPlugin);
 			_utils.sendIcpAsync(loadMe.message);
 		}else if(loadMe.type == 'themes') {
-			_utils.LoadDir(loadMe.localpath, _this.LoadTheme);
+			_utils.LoadDir(loadMe.localpath, this.LoadTheme);
 			_utils.sendIcpAsync(loadMe.message);
 		}else if(loadMe.type == 'javascript') {
 			_utils.injectJavaScriptSync(loadMe);
