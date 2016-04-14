@@ -141,7 +141,6 @@ Utils.prototype.CheckCacheFile = function(path, timeHours) {
     return isCacheExpired;
 };
 
-//Download using https
 Utils.prototype.DownloadHTTPS = function(host, path, callback) {
 
     var options = {
@@ -163,27 +162,6 @@ Utils.prototype.DownloadHTTPS = function(host, path, callback) {
     });
 }
 
-Utils.prototype.DownloadSyncHTTPS = function(host, path) {
-    var options = {
-        host: host,
-        path: path,
-        headers: {'user-agent': 'Mozilla/5.0'},
-    }
-
-    https.get(options, function(res) {
-        var data = "";
-        res.on('data', function(chunk) {
-            data += chunk;
-        });
-        res.on("end", function() {
-            callback(data);
-        });
-    }).on("error", function() {
-        callback(null);
-    });
-}
-
-//Download using http
 Utils.prototype.DownloadHTTP = function(url, callback) {
     http.get(url, function(result) {
         var data = '';
@@ -211,7 +189,6 @@ Utils.prototype.CreateTask = function(action, source, dest) {
     this.SetAnswer = function(answer) {
         _selfTask.answer = answer;
         _selfTask.ResolveTask();
-        _instance.jsLog('Task finished ' + dest);
         _selfTask.finished = true;
     };
 
@@ -234,20 +211,17 @@ Utils.prototype.TaskManager = function() {
     this.tasks = [];
 
     this.AddTask = function(task) {
-        _instance.jsLog('AddTask');
         this.tasks.push(task);
     };
 
     var _selfManager = this;
     this.RunTasks = function (callback) {
-        _instance.jsLog('Checking Task');
         if(_selfManager.tasks.length > 0) {
+            _instance.jsLog('Checking Task');
             var task = _selfManager.tasks[0];
 
-            if(task.finished) {
+            if(task.finished)
                 _selfManager.tasks.splice(0, 1);
-                _instance.jsLog('Remove one task :' + JSON.stringify(task));
-            }
 
             setTimeout(_selfManager.RunTasks, 5000, callback);
         }else

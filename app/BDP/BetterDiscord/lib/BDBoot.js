@@ -236,7 +236,7 @@ BetterDiscordBoot.prototype.Update = function() {
 
 	taskManager.RunTasks(function() {
 		_utils.jsLog('Finished Tasks');
-		//_mainWindow.reload();
+		_mainWindow.reload();
 	});
 
 
