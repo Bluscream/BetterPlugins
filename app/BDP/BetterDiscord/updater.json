@@ -19,7 +19,7 @@
       "version": "0.4.6"
     },
     {
-      "path": "lib/Utils.js",
+      "path": "lib/BDUtils.js",
       "version": "0.4.7"
     }
   ]
