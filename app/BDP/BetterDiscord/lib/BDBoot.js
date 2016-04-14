@@ -55,7 +55,7 @@ BetterDiscordBoot.prototype.BDStartUp = false;
 BetterDiscordBoot.prototype.BDReBoot = false;
 
 BetterDiscordBoot.prototype.BootStrapStart = function() {
-	this.SetupListeners();
+	this.RegisterMainProcessListeners();
 
 	this.bootInterval = setInterval(this.HotLoadCheck, 2000);
 	this.eventInterval = setInterval(this.DispatchEvents, 1000);
@@ -104,6 +104,7 @@ BetterDiscordBoot.prototype.HotLoadCheck = function() {
 BetterDiscordBoot.prototype.DispatchEvents = function() {
 	if(_self.BDStartUp && _self.EventTriggered("dom-ready")) {
 		_utils.SecureTryCatch('BetterDiscordBoot->DispatchEvents(Loader->Load())', function() {
+			_this.RegisterWebProcessListeners();
 			_this.Load(_old_updater);
 		});
 	}
@@ -236,7 +237,19 @@ BetterDiscordBoot.prototype.SendWebEvent = function(event, arg) {
 	return _mainWindow.webContents.send(event, arg);
 };
 
-BetterDiscordBoot.prototype.SetupListeners = function() {
+BetterDiscordBoot.prototype.RegisterMainProcessListeners = function() {
+	_ipc.on('async-message-boot', function(event, arg) { _self.IpcAsyncMessage(event, arg); });
+
+	_mainWindow.webContents.on("dom-ready", function() { _self.RecordEvent("dom-ready"); });
+	_mainWindow.webContents.on("new-window", function() { _self.RecordEvent("new-window"); });
+	_mainWindow.webContents.on("did-fail-load", function() { _self.RecordEvent("did-fail-load"); });
+	_mainWindow.webContents.on("crashed", function() { _self.RecordEvent("crashed"); });
+	_mainWindow.on("focus", function() { _self.RecordEvent("focus"); });
+	_mainWindow.on("blur", function() { _self.RecordEvent("blur"); });
+	_mainWindow.on("close", function() { _self.RecordEvent("close"); });
+};
+
+BetterDiscordBoot.prototype.RegisterWebProcessListeners = function() {
 	this.ExecJS("var betterDiscordIPC = require('electron').ipcRenderer;");
 	this.ExecJS("betterDiscordIPC.on('async-message-log', function(event, msgObj){ \
 	switch(msgObj.type) { \
@@ -261,16 +274,6 @@ BetterDiscordBoot.prototype.SetupListeners = function() {
  	this.ExecJS("betterDiscordIPC.on('async-message-loadCSS', function(event, styleObj) { \
  			bdthemes[styleObj.name] = styleObj; \
 	}); ");
-
-	_ipc.on('async-message-boot', function(event, arg) { _self.IpcAsyncMessage(event, arg); });
-
-	_mainWindow.webContents.on("dom-ready", function() { _self.RecordEvent("dom-ready"); });
-	_mainWindow.webContents.on("new-window", function() { _self.RecordEvent("new-window"); });
-	_mainWindow.webContents.on("did-fail-load", function() { _self.RecordEvent("did-fail-load"); });
-	_mainWindow.webContents.on("crashed", function() { _self.RecordEvent("crashed"); });
-	_mainWindow.on("focus", function() { _self.RecordEvent("focus"); });
-	_mainWindow.on("blur", function() { _self.RecordEvent("blur"); });
-	_mainWindow.on("close", function() { _self.RecordEvent("close"); });
 };
 
 BetterDiscordBoot.prototype.JsLog = function(message, type) {

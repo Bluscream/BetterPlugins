@@ -6,12 +6,9 @@
  * https://github.com/Jiiks/BetterDiscordApp
  */
 
-var http = require('http');
-var https = require('https');
 var _fs = require('fs');
-
-var eol = require('os').EOL;
-var logs = "";
+var _http = require('http');
+var _https = require('https');
 
 var _self, _this;
 var Utils = function(self) {
@@ -137,14 +134,13 @@ Utils.prototype.CheckCacheFile = function(path, timeHours) {
 };
 
 Utils.prototype.DownloadHTTPS = function(host, path, callback) {
-
     var options = {
         host: host,
         path: path,
         headers: {'user-agent': 'Mozilla/5.0'},
     }
 
-    https.get(options, function(res) {
+    _https.get(options, function(res) {
         var data = "";
         res.on('data', function(chunk) {
             data += chunk;
@@ -158,7 +154,7 @@ Utils.prototype.DownloadHTTPS = function(host, path, callback) {
 }
 
 Utils.prototype.DownloadHTTP = function(url, callback) {
-    http.get(url, function(result) {
+    _http.get(url, function(result) {
         var data = '';
         result.on('data', function(chunk) {
             data += chunk;
