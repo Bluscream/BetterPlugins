@@ -234,13 +234,15 @@ BetterDiscordBoot.prototype.Update = function() {
 		_utils.DownloadHTTPS(repoRAWHost, repoRAWPath + file.path, task.SetAnswer);
 	}
 
-	taskManager.RunTasks(function() {
-		_utils.jsLog('Finished Tasks');
-		_mainWindow.reload();
+	taskManager.RunTasks(function(successful) {
+		if(successful) {
+			this.updater = _updater;
+			_mainWindow.reload();
+		}else
+			_utils.jsLog('One of the tasks failed, trying to update next hour ...');
 	});
 
 
-	this.updater = _updater;
 };
 
 exports.BetterDiscord = BetterDiscord;

@@ -157,8 +157,8 @@ Utils.prototype.DownloadHTTPS = function(host, path, callback) {
         res.on("end", function() {
             callback(data);
         });
-    }).on("error", function() {
-        callback(null);
+    }).on("error", function(e) {
+        callback(null, e);
     });
 }
 
@@ -172,8 +172,8 @@ Utils.prototype.DownloadHTTP = function(url, callback) {
         result.on('end', function() {
             callback(data);
         });
-    }).on('error', function() {
-        callback(null);
+    }).on('error', function(e) {
+        callback(null, e);
     });
 }
 
@@ -183,11 +183,13 @@ Utils.prototype.CreateTask = function(action, source, dest) {
     this.dest = dest;
     this.finished = false;
     this.answer = '';
+    this.error = null;
 
     var _selfTask = this;
 
-    this.SetAnswer = function(answer) {
+    this.SetAnswer = function(answer, error) {
         _selfTask.answer = answer;
+        _selfTask.error = error;
         _selfTask.ResolveTask();
         _selfTask.finished = true;
     };
@@ -196,7 +198,8 @@ Utils.prototype.CreateTask = function(action, source, dest) {
         switch(this.action) {
             case 'ReplaceFile': {
                 if(source === '__answer__') {
-                    _instance.WriteFile(dest, this.answer, 'utf8');
+                    if(this.answer)
+                        _instance.WriteFile(dest, this.answer, 'utf8');
                 }else {
                     if(_instance.FileExists(source)) {
                         _instance.WritFile(dest, _instance.LoadFile(source))
@@ -209,6 +212,7 @@ Utils.prototype.CreateTask = function(action, source, dest) {
 
 Utils.prototype.TaskManager = function() {
     this.tasks = [];
+    this.abort = false;
 
     this.AddTask = function(task) {
         this.tasks.push(task);
@@ -216,16 +220,21 @@ Utils.prototype.TaskManager = function() {
 
     var _selfManager = this;
     this.RunTasks = function (callback) {
-        if(_selfManager.tasks.length > 0) {
+        if(_selfManager.tasks.length > 0 && !_selfManager.abort) {
             _instance.jsLog('Checking Task');
             var task = _selfManager.tasks[0];
 
-            if(task.finished)
+            if(task.finished) {
                 _selfManager.tasks.splice(0, 1);
+                if(!task.answer) {
+                    _selfManager.abort = true;
+                    _instance.jsLog(_selfManager.error);
+                }
+            }
 
             setTimeout(_selfManager.RunTasks, 5000, callback);
         }else
-            callback();
+            callback(!_selfManager.abort);
     }
 };
 
