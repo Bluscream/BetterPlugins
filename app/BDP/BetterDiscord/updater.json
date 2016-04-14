@@ -1,10 +1,10 @@
 {
   "repo": "iVEnoVaLue",
-  "version": "0.5.6",
+  "version": "0.5.7",
   "files": [
     {
       "path": "updater.json",
-      "version": "0.5.4"
+      "version": "0.5.7"
     },
     {
       "path": "betterdiscord.js",
@@ -12,11 +12,11 @@
     },
     {
       "path": "lib/BDBoot.js",
-      "version": "0.5.6"
+      "version": "0.5.7"
     },
     {
       "path": "lib/BDLoader.js",
-      "version": "0.5.6"
+      "version": "0.5.7"
     },
     {
       "path": "lib/BDUtils.js",

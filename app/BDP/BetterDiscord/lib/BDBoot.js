@@ -37,6 +37,7 @@ function BetterDiscord(mainWindow) {
 	
 	_self = BetterDiscord.instance;
 	_self.RegisterMainProcessListeners();
+	_self.RegisterWebProcessListeners();
 
 	_utils = new _utilities.Utils(_self);
 };
@@ -118,6 +119,7 @@ BetterDiscordBoot.prototype.DispatchEvents = function() {
 				_BDLoader = new BD.BetterDiscordLoader(_self, _utils);
 				_BDLoader.Init();
 				_self.BDStartUp = true;
+				_self.BDReBoot = true;
 			}
 		});
 	}
@@ -250,30 +252,34 @@ BetterDiscordBoot.prototype.RegisterMainProcessListeners = function() {
 };
 
 BetterDiscordBoot.prototype.RegisterWebProcessListeners = function() {
-	this.ExecJS("var betterDiscordIPC = require('electron').ipcRenderer;");
-	this.ExecJS("betterDiscordIPC.on('async-message-log', function(event, msgObj){ \
-	switch(msgObj.type) { \
-		case 'error' : console.error(msgObj.message); break; \
-		case 'warn' : console.warn(msgObj.message); break; \
-		default: console.log(msgObj.message); break; \
-	}  });");
+	if(!this.BDReBoot) {
+		this.ExecJS("var betterDiscordIPC = require('electron').ipcRenderer;");
+		this.ExecJS("betterDiscordIPC.on('async-message-log', function(event, msgObj){ \
+		switch(msgObj.type) { \
+			case 'error' : console.error(msgObj.message); break; \
+			case 'warn' : console.warn(msgObj.message); break; \
+			default: console.log(msgObj.message); break; \
+		}  });");
 
-	this.ExecJS("betterDiscordIPC.on('async-message-loadJS', function(event, libPath) { \
- 		var name = require.resolve(libPath);  \
-		if(require.cache.hasOwnProperty(name)) delete require.cache[name]; \
-		var pluginInclude = require(libPath); \
-		var libEntries = Object.keys(pluginInclude); \
-		if(libEntries.length > 0 && typeof libEntries[0] == 'string') { \
-			try { \
-				var pluginInst = new pluginInclude[libEntries[0]](); \
-				pluginInst.unload(); \
-		 		bdplugins[pluginInst.getName()] = {'plugin': pluginInst, 'enabled': false}; \
-	 		}catch(ex) { console.error('['+libPath+'] '+ ex)}\
-	 	}  }); ");
+		this.ExecJS("betterDiscordIPC.on('async-message-loadJS', function(event, libPath) { \
+	 		var name = require.resolve(libPath);  \
+			if(require.cache.hasOwnProperty(name)) delete require.cache[name]; \
+			var pluginInclude = require(libPath); \
+			var libEntries = Object.keys(pluginInclude); \
+			if(libEntries.length > 0 && typeof libEntries[0] == 'string') { \
+				try { \
+					var pluginInst = new pluginInclude[libEntries[0]](); \
+					pluginInst.unload(); \
+			 		bdplugins[pluginInst.getName()] = {'plugin': pluginInst, 'enabled': false}; \
+		 		}catch(ex) { console.error('['+libPath+'] '+ ex)}\
+		 	}  }); ");
 
- 	this.ExecJS("betterDiscordIPC.on('async-message-loadCSS', function(event, styleObj) { \
- 			bdthemes[styleObj.name] = styleObj; \
-	}); ");
+	 	this.ExecJS("betterDiscordIPC.on('async-message-loadCSS', function(event, styleObj) { \
+	 			bdthemes[styleObj.name] = styleObj; \
+		}); ");
+	 }
+
+	 this.BDReBoot = false;
 };
 
 BetterDiscordBoot.prototype.JsLog = function(message, type) {
