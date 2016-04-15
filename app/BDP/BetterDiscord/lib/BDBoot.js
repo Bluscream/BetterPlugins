@@ -269,9 +269,13 @@ BetterDiscordBoot.prototype.RegisterWebProcessListeners = function() {
 			if(libEntries.length > 0 && typeof libEntries[0] == 'string') { \
 				try { \
 					var pluginInst = new pluginInclude[libEntries[0]](); \
+					eval(libEntries[0]+' = pluginInst;'); \
 					pluginInst.unload(); \
 			 		bdplugins[pluginInst.getName()] = {'plugin': pluginInst, 'enabled': false}; \
 		 		}catch(ex) { console.error('['+libPath+'] '+ ex)}\
+		 	}else { \
+		 		console.warn('['+libPath+'] Make sure to export the main class `exports.mainClass = mainClass;` at the end of your plugin.')	\
+		 		\
 		 	}  }); ");
 
 	 	this.ExecJS("betterDiscordIPC.on('async-message-loadCSS', function(event, styleObj) { \
