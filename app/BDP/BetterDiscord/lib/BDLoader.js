@@ -287,7 +287,7 @@ BetterDiscordLoader.prototype.IpcAsyncMessage = function(event, arg) {
 
 	if(ipcTask) {
 		var loadMe = ipcTask.task;
-		_utils.updateLoading("Loading Resources (" + loadMe.resource + ")", loadMe.number / ipcTask.count * 100, 100);
+		_utils.updateLoading("Loading Resources ("+loadMe.resource+")", loadMe.number / ipcTask.count * 100, 100);
 
 		if(loadMe.type == 'plugins') {
 			_utils.LoadDir(loadMe.localpath, this.LoadPlugin);

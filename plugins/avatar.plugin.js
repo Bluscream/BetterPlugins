@@ -235,7 +235,7 @@ AvatarHover.prototype.getSettingsFile = function() {
 	var _os = process.platform;
 	var _dataPath = _os == "win32" ? process.env.APPDATA : _os == 'darwin' ? process.env.HOME + '/Library/Preferences' : '/var/local';
 	_dataPath += "/BetterDiscord";
-	_userFile = _dataPath + "/avatar.json";
+	var _userFile = _dataPath + "/avatar.json";
 	return _userFile;
 };
 

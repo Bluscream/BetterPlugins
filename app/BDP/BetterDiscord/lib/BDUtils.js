@@ -262,7 +262,10 @@ Utils.prototype.injectJavaScriptSync = function(loadMe) {
         script.id="'+loadMe.elemId+'"; \
         script.type = "text/javascript"; \
         script.onload = function() { \
-            betterDiscordIPC.send("async-message-boot", "'+loadMe.message+'"); \
+            /* As it might take a while to load, if you refresh the page\
+            at the same time, it would become invalid */ \
+            if(betterDiscordIPC) \
+                betterDiscordIPC.send("async-message-boot", "'+loadMe.message+'"); \
         }; \
         document.getElementsByTagName("body")[0].appendChild(script); \
         script.src = "'+loadMe.url+'"; \
