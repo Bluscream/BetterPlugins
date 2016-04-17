@@ -268,6 +268,7 @@ BetterDiscordBoot.prototype.RegisterWebProcessListeners = function() {
 			if(libEntries.length > 0 && typeof libEntries[0] == 'string') { \
 				try { \
 					var pluginInst = new pluginInclude[libEntries[0]](); \
+					eval(libEntries[0] + '= pluginInst;');\
 					pluginInst.unload(); \
 					if(bdplugins.hasOwnProperty(pluginInst.getName())) { \
 						var pluginObj = bdplugins[pluginInst.getName()]; \
