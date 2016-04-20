@@ -1,4 +1,4 @@
-
+//META{"name":"MyAwesomePlugin"}*//
 
 var MyAwesomePlugin = function () {
 	this.getName = function(){ return "Test Plugin"; }
