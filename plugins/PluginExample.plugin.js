@@ -1,6 +1,11 @@
+//META{"name":"MyAwesomePlugin"}*//
 
-
-var MyAwesomePlugin = function () {};
+var MyAwesomePlugin = function () {
+	this.getName = function(){ return "Test Plugin"; }
+	this.getDescription = function(){ return "Test Plugin Description."; }
+	this.getVersion = function(){ return "0.0.1"; }
+	this.getAuthor = function(){ return "noVaLue"; }
+};
 
 MyAwesomePlugin.prototype.load = function () {
 	// This calls when the plugin is charged first time
@@ -34,27 +39,11 @@ MyAwesomePlugin.prototype.getSettingsPanel = function () {
     return "<h3>Settings Panel</h3>";
 };
 
-MyAwesomePlugin.prototype.getName = function () {
-    return "Test Plugin";
-};
-
-MyAwesomePlugin.prototype.getDescription = function () {
-    return "Test Plugin";
-};
-
-MyAwesomePlugin.prototype.getVersion = function () {
-    return "0.0.1";
-};
-
-MyAwesomePlugin.prototype.getAuthor = function () {
-    return "noVaLue";
-};
-
 
 
 // To export this object constructor which is required
 
-exports.MyAwesomePlugin = MyAwesomePlugin;
+try{exports.MyAwesomePlugin = MyAwesomePlugin;}catch(e){console.warn('Using old version, not exporting functions.')}
 
 /* For a API like plugin some modifications have to be made 
 
