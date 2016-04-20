@@ -288,6 +288,9 @@ BetterDiscordBoot.prototype.RegisterWebProcessListeners = function() {
 							this.getSettingsPanel = function() { return this.instance.getSettingsPanel() }; \
 							this.onSwitch = function() { return this.instance.onSwitch() }; \
 							this.onMessage = function() { return this.instance.onMessage() }; \
+							if (\"observer\" in this.instance) { \
+								this.observer = function(e) { return this.instance.observer(e) }; \
+							} \
 						}; \
 			 			bdplugins[pluginInst.getName()] = {'plugin': new wrapperInstance(pluginInst), 'enabled': false}; \
 		 			} \
