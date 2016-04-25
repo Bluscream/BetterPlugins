@@ -1,49 +1,56 @@
-//META{"name":"MyAwesomePlugin"}*//
+//META{"name":"PluginExample"}*//
 
-var MyAwesomePlugin = function () {
+var PluginExample = function () {
 	this.getName = function(){ return "Test Plugin"; }
 	this.getDescription = function(){ return "Test Plugin Description."; }
 	this.getVersion = function(){ return "0.0.1"; }
 	this.getAuthor = function(){ return "noVaLue"; }
 };
 
-MyAwesomePlugin.prototype.load = function () {
+
+PluginExample.prototype.load = function () {
+	console.info("'PluginExample.prototype.load event' was fired.");
 	// This calls when the plugin is charged first time
 };
-MyAwesomePlugin.prototype.unload = function () {
-	// This should remove every modification you've made on discord (if any)
-};
-
-MyAwesomePlugin.prototype.start = function () {
+PluginExample.prototype.start = function () {
+	console.info("'PluginExample.prototype.start' event was fired.");
 	// When you activate the plugin it gets called, 
 	// also when plugin calls load() first time
 };
 
-MyAwesomePlugin.prototype.stop = function () {
+PluginExample.prototype.onSwitch = function () {
+	console.info("'PluginExample.prototype.onSwitch' event was fired.");
+	// called when a server or channel is switched
+};
+PluginExample.prototype.onMessage = function () {
+	console.info("'PluginExample.prototype.onMessage' event was fired.");
+	// called when a message is received
+};
+PluginExample.prototype.observer = function (e) {
+	console.info("'PluginExample.prototype.observer' event was fired. Event Data:");console.info(e);
+	// raw MutationObserver event for each mutation
+};
+
+PluginExample.prototype.stop = function () {
+	console.info("'PluginExample.prototype.stop' event was fired.");
 	// Called on plugin desactivation
 };
-
-MyAwesomePlugin.prototype.onMessage = function () {
-    // called when a message is received
+PluginExample.prototype.unload = function () {
+	console.info("'PluginExample.prototype.unload' event was fired.");
+	// This should remove every modification you've made on discord (if any)
 };
 
-MyAwesomePlugin.prototype.onSwitch = function () {
-    // called when a server or channel is switched
-};
 
-MyAwesomePlugin.prototype.observer = function (e) {
-    // raw MutationObserver event for each mutation
-};
-
-MyAwesomePlugin.prototype.getSettingsPanel = function () {
-    return "<h3>Settings Panel</h3>";
+PluginExample.prototype.getSettingsPanel = function () {
+	console.info("'PluginExample.prototype.getSettingsPanel' event was fired.");
+	return "<h3>Settings Panel</h3>";
 };
 
 
 
 // To export this object constructor which is required
 
-try{exports.MyAwesomePlugin = MyAwesomePlugin;}catch(e){console.warn('Using old version, not exporting functions.')}
+try{exports.PluginExample = PluginExample;}catch(e){console.warn('PluginExample: Using old BetterDiscord version, not exporting functions.')}
 
 /* For a API like plugin some modifications have to be made 
 
